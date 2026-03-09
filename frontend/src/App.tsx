@@ -16,6 +16,7 @@ import AuditWorkbench from "./pages/AuditWorkbench";
 import ContactUs from "./pages/ContactUs";
 
 const NAV_ITEMS = [
+  { path: "/", icon: "home", label: "首页" },
   { path: "/dashboard", icon: "dashboard", label: "仪表盘" },
   { path: "/projects", icon: "analytics", label: "项目管理" },
   { path: "/drawings", icon: "draw", label: "图纸库" },
@@ -52,7 +53,7 @@ function AppSidebar() {
         {/* Nav */}
         <nav className="app-sidebar-nav">
           {NAV_ITEMS.map((item) => {
-            const active = location.pathname.startsWith(item.path);
+            const active = item.path === "/" ? location.pathname === "/" : location.pathname.startsWith(item.path);
             return (
               <a
                 key={item.path}
