@@ -124,7 +124,7 @@ export default function App() {
       }}
     >
       <AntApp>
-        <BrowserRouter>
+        <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
           <Routes>
             {/* Landing page — no sidebar */}
             <Route path="/" element={<LandingPage />} />

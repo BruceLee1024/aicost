@@ -11,6 +11,16 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- SPA redirect handler for GitHub Pages 404.html -->
+    <script>
+      (function(){
+        var redir = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redir && redir !== location.href) {
+          history.replaceState(null, null, redir);
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
