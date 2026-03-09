@@ -96,7 +96,7 @@ function AppSidebar() {
         className="contact-modal"
       >
         <div className="contact-modal-body">
-          <img src="/qrcode.jpg" alt="联系作者" className="contact-qrcode" />
+          <img src={`${import.meta.env.BASE_URL}qrcode.jpg`} alt="联系作者" className="contact-qrcode" />
           <h3>添加微信</h3>
           <p>微信号：Changning_Lee</p>
           <p style={{ marginTop: 4 }}>扫描二维码，与我取得联系</p>

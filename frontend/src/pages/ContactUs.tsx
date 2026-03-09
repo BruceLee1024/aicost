@@ -69,7 +69,7 @@ export default function ContactUs() {
           </div>
           <div className="contact-card-right">
             <div className="contact-qr-wrapper">
-              <img src="/qrcode.jpg" alt="微信二维码" />
+              <img src={`${import.meta.env.BASE_URL}qrcode.jpg`} alt="微信二维码" />
             </div>
             <span className="contact-qr-hint">微信扫一扫，添加好友</span>
           </div>

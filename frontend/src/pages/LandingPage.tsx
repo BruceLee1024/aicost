@@ -215,7 +215,7 @@ export default function LandingPage() {
           <div className="landing-footer-col">
             <h4>添加微信</h4>
             <div className="landing-footer-qrcode">
-              <img src="/qrcode.jpg" alt="添加微信" />
+              <img src={`${import.meta.env.BASE_URL}qrcode.jpg`} alt="添加微信" />
             </div>
             <p style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 8 }}>Changning_Lee</p>
             <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>扫码添加微信</p>
