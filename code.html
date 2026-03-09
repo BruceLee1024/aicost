@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html class="dark"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>项目概览与 AI 智能生成工作台</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "primary": "#13a4ec",
+          "background-light": "#f6f7f8",
+          "background-dark": "#101c22",
+          "surface-light": "#ffffff",
+          "surface-dark": "#1a2a32",
+          "border-light": "#e2e8f0",
+          "border-dark": "#2a424f",
+          "text-primary-light": "#0f172a",
+          "text-primary-dark": "#f8fafc",
+          "text-secondary-light": "#64748b",
+          "text-secondary-dark": "#94a3b8",
+        },
+        fontFamily: {
+          "display": ["Manrope", "sans-serif"]
+        },
+        borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+      },
+    },
+  }
+</script>
+<style>
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .ai-gradient-text {
+        background: linear-gradient(135deg, #13a4ec, #8b5cf6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .ai-gradient-bg {
+        background: linear-gradient(135deg, rgba(19, 164, 236, 0.1), rgba(139, 92, 246, 0.1));
+    }
+</style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark font-display antialiased min-h-screen flex flex-col overflow-x-hidden">
+<div class="flex h-full grow flex-col">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark px-6 py-3 shrink-0">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 text-primary">
+<span class="material-symbols-outlined text-3xl">architecture</span>
+<h2 class="text-text-primary-light dark:text-text-primary-dark text-xl font-bold leading-tight tracking-tight">智价AI</h2>
+</div>
+<label class="flex flex-col min-w-40 !h-10 max-w-64 hidden md:flex">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-colors">
+<div class="text-text-secondary-light dark:text-text-secondary-dark flex items-center justify-center pl-3">
+<span class="material-symbols-outlined text-xl">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden text-text-primary-light dark:text-text-primary-dark focus:outline-0 focus:ring-0 border-none bg-transparent h-full placeholder:text-text-secondary-light dark:placeholder:text-text-secondary-dark px-3 text-sm font-medium" placeholder="搜索项目..." value=""/>
+</div>
+</label>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden lg:flex items-center gap-6">
+<a class="text-primary text-sm font-semibold border-b-2 border-primary py-4 -mb-[18px]" href="#">项目管理</a>
+<a class="text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark text-sm font-medium transition-colors py-4 -mb-[18px]" href="#">计价管理</a>
+<a class="text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark text-sm font-medium transition-colors py-4 -mb-[18px] flex items-center gap-1" href="#"><span class="material-symbols-outlined text-sm text-primary">auto_awesome</span> AI工具箱</a>
+<a class="text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark text-sm font-medium transition-colors py-4 -mb-[18px]" href="#">系统设置</a>
+</nav>
+<div class="h-6 w-px bg-border-light dark:bg-border-dark hidden md:block"></div>
+<button class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-9 px-4 bg-primary text-white text-sm font-bold shadow-sm hover:bg-primary/90 transition-colors gap-2">
+<span class="material-symbols-outlined text-lg">add</span>
+<span class="hidden sm:inline truncate">新建计价</span>
+</button>
+<button class="flex items-center justify-center rounded-full size-9 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark hover:bg-background-light dark:hover:bg-background-dark transition-colors">
+<span class="material-symbols-outlined text-text-secondary-light dark:text-text-secondary-dark">notifications</span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-9 border-2 border-surface-light dark:border-surface-dark shadow-sm" data-alt="User avatar placeholder" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAfQfFRm4SOWKyHjG6_nTWb8sXt9S0BI4RbuLi9GLD0yL0bXLXpP_JR2cX0zEY_zwMwOrL3CAcJEsRxj1-lsYMJZoaamUk1Rjj06gz-xgZy2Bd-Ij5xJi26TRqCOEsZeB6urXHD5MGXNwBVNSBhkeS58llh7YyuMvDb5dzKwcC8wfsCWYzK8dte8l9OGx7nuYjiHVx9mdZiJF3NMRAe1xytnSRSjP1MmJ28RZwH5K4OxituxNUhwr-pm4JqkSQUQ--eDZmoPv42IlrB");'></div>
+</div>
+</header>
+<main class="flex flex-1 overflow-hidden">
+<aside class="w-64 flex-col border-r border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark hidden md:flex shrink-0 overflow-y-auto">
+<div class="p-5 border-b border-border-light dark:border-border-dark">
+<div class="flex gap-3 items-center mb-4">
+<div class="flex items-center justify-center rounded-lg size-10 bg-primary/10 text-primary">
+<span class="material-symbols-outlined">domain</span>
+</div>
+<div class="flex flex-col overflow-hidden">
+<h1 class="text-text-primary-light dark:text-text-primary-dark text-base font-bold truncate">阿尔法项目</h1>
+<p class="text-text-secondary-light dark:text-text-secondary-dark text-xs truncate">商业综合体</p>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-center text-xs mb-1">
+<span class="text-text-secondary-light dark:text-text-secondary-dark font-medium">完成进度</span>
+<span class="text-text-primary-light dark:text-text-primary-dark font-bold">45%</span>
+</div>
+<div class="w-full overflow-hidden rounded-full bg-border-light dark:bg-border-dark h-1.5">
+<div class="h-full rounded-full bg-primary w-[45%]"></div>
+</div>
+</div>
+</div>
+<nav class="flex-1 p-3 flex flex-col gap-1">
+<p class="px-3 py-2 text-xs font-bold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider mb-1 mt-2">视图控制</p>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-light dark:text-text-secondary-dark hover:bg-background-light dark:hover:bg-background-dark transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="text-sm font-medium">仪表盘</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary" href="#">
+<span class="material-symbols-outlined text-[20px]">account_tree</span>
+<span class="text-sm font-bold">清单树</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-light dark:text-text-secondary-dark hover:bg-background-light dark:hover:bg-background-dark transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+<span class="text-sm font-medium">材料库</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-light dark:text-text-secondary-dark hover:bg-background-light dark:hover:bg-background-dark transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">group</span>
+<span class="text-sm font-medium">人工费</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-light dark:text-text-secondary-dark hover:bg-background-light dark:hover:bg-background-dark transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">precision_manufacturing</span>
+<span class="text-sm font-medium">机械费</span>
+</a>
+<p class="px-3 py-2 text-xs font-bold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider mb-1 mt-6">分部工程</p>
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-2 px-3 py-1.5 text-text-primary-light dark:text-text-primary-dark cursor-pointer group">
+<span class="material-symbols-outlined text-[16px] text-text-secondary-light dark:text-text-secondary-dark group-hover:text-primary transition-colors">folder_open</span>
+<span class="text-sm font-medium">1. 基础工程</span>
+</div>
+<div class="flex flex-col ml-6 pl-2 border-l border-border-light dark:border-border-dark gap-1 py-1">
+<div class="flex items-center gap-2 px-2 py-1 text-primary cursor-pointer">
+<span class="text-sm font-medium">1.1 土方开挖</span>
+</div>
+<div class="flex items-center gap-2 px-2 py-1 text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark cursor-pointer">
+<span class="text-sm font-medium">1.2 基础结构</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 px-3 py-1.5 text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark cursor-pointer group mt-1">
+<span class="material-symbols-outlined text-[16px] group-hover:text-primary transition-colors">folder</span>
+<span class="text-sm font-medium">2. 主体结构</span>
+</div>
+<div class="flex items-center gap-2 px-3 py-1.5 text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark cursor-pointer group">
+<span class="material-symbols-outlined text-[16px] group-hover:text-primary transition-colors">folder</span>
+<span class="text-sm font-medium">3. 装饰装修</span>
+</div>
+</nav>
+</aside>
+<section class="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark">
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-5 lg:px-8 border-b border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark">
+<div class="flex flex-col gap-1">
+<h2 class="text-text-primary-light dark:text-text-primary-dark text-2xl font-bold leading-tight flex items-center gap-2">
+                        1.1 土方开挖工程
+                    </h2>
+<p class="text-text-secondary-light dark:text-text-secondary-dark text-sm">管理本节工程量与智能组价</p>
+</div>
+<div class="flex gap-3 flex-wrap">
+<button class="flex items-center justify-center rounded-lg h-9 px-4 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark text-text-primary-light dark:text-text-primary-dark text-sm font-medium hover:bg-background-light dark:hover:bg-background-dark transition-colors gap-2">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>导出报告</span>
+</button>
+<button class="flex items-center justify-center rounded-lg h-9 px-4 bg-primary text-white text-sm font-bold shadow-sm hover:bg-primary/90 transition-colors gap-2">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+<span>一键智能组价</span>
+</button>
+</div>
+</div>
+<div class="flex-1 p-5 lg:px-8 overflow-y-auto @container">
+<div class="rounded-xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark overflow-hidden shadow-sm">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse min-w-[800px]">
+<thead>
+<tr class="bg-background-light dark:bg-background-dark border-b border-border-light dark:border-border-dark">
+<th class="px-4 py-3 text-text-secondary-light dark:text-text-secondary-dark text-xs font-bold uppercase tracking-wider w-16 text-center">编码</th>
+<th class="px-4 py-3 text-text-secondary-light dark:text-text-secondary-dark text-xs font-bold uppercase tracking-wider">项目特征/描述</th>
+<th class="px-4 py-3 text-text-secondary-light dark:text-text-secondary-dark text-xs font-bold uppercase tracking-wider w-24">单位</th>
+<th class="px-4 py-3 text-text-secondary-light dark:text-text-secondary-dark text-xs font-bold uppercase tracking-wider w-32 text-right">工程量</th>
+<th class="px-4 py-3 text-text-secondary-light dark:text-text-secondary-dark text-xs font-bold uppercase tracking-wider w-40 text-right group cursor-help">
+<div class="flex items-center justify-end gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary">auto_awesome</span>
+                                            AI 综合单价
+                                        </div>
+</th>
+<th class="px-4 py-3 text-text-secondary-light dark:text-text-secondary-dark text-xs font-bold uppercase tracking-wider w-40 text-right">合价</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-light dark:divide-border-dark">
+<tr class="hover:bg-background-light/50 dark:hover:bg-background-dark/50 transition-colors group">
+<td class="px-4 py-3 text-text-primary-light dark:text-text-primary-dark text-sm font-medium text-center">1.1.1</td>
+<td class="px-4 py-3 text-text-secondary-light dark:text-text-secondary-dark text-sm">场地平整及表土剥离</td>
+<td class="px-4 py-3 text-text-secondary-light dark:text-text-secondary-dark text-sm">m²</td>
+<td class="px-4 py-3 text-text-primary-light dark:text-text-primary-dark text-sm font-medium text-right">1,200.00</td>
+<td class="px-4 py-3 text-sm text-right">
+<div class="flex items-center justify-end gap-2">
+<div class="w-16 overflow-hidden rounded-sm bg-border-light dark:bg-border-dark h-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<div class="h-full rounded-full bg-primary w-full"></div>
+</div>
+<span class="text-text-primary-light dark:text-text-primary-dark font-medium">$4.50</span>
+</div>
+</td>
+<td class="px-4 py-3 text-text-primary-light dark:text-text-primary-dark text-sm font-bold text-right">$5,400.00</td>
+</tr>
+<tr class="hover:bg-background-light/50 dark:hover:bg-background-dark/50 transition-colors group">
+<td class="px-4 py-3 text-text-primary-light dark:text-text-primary-dark text-sm font-medium text-center">1.1.2</td>
+<td class="px-4 py-3 text-text-secondary-light dark:text-text-secondary-dark text-sm">一般土方开挖（硬土）</td>
+<td class="px-4 py-3 text-text-secondary-light dark:text-text-secondary-dark text-sm">m³</td>
+<td class="px-4 py-3 text-text-primary-light dark:text-text-primary-dark text-sm font-medium text-right">850.00</td>
+<td class="px-4 py-3 text-sm text-right">
+<div class="flex items-center justify-end gap-2">
+<div class="w-16 overflow-hidden rounded-sm bg-border-light dark:bg-border-dark h-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<div class="h-full rounded-full bg-primary w-full"></div>
+</div>
+<span class="text-text-primary-light dark:text-text-primary-dark font-medium">$12.00</span>
+</div>
+</td>
+<td class="px-4 py-3 text-text-primary-light dark:text-text-primary-dark text-sm font-bold text-right">$10,200.00</td>
+</tr>
+<tr class="hover:bg-background-light/50 dark:hover:bg-background-dark/50 transition-colors bg-primary/5 dark:bg-primary/5 group border-l-2 border-l-primary">
+<td class="px-4 py-3 text-text-primary-light dark:text-text-primary-dark text-sm font-medium text-center">1.1.3</td>
+<td class="px-4 py-3 text-text-primary-light dark:text-text-primary-dark text-sm font-medium">沟槽开挖（条形基础）</td>
+<td class="px-4 py-3 text-text-secondary-light dark:text-text-secondary-dark text-sm">m³</td>
+<td class="px-4 py-3 text-text-primary-light dark:text-text-primary-dark text-sm font-medium text-right">240.00</td>
+<td class="px-4 py-3 text-sm text-right">
+<div class="flex items-center justify-end gap-2 text-primary">
+<span class="material-symbols-outlined text-[16px] animate-pulse">sync</span>
+<span class="font-medium text-xs uppercase tracking-wider">生成中</span>
+</div>
+</td>
+<td class="px-4 py-3 text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium text-right">--</td>
+</tr>
+<tr class="hover:bg-background-light/50 dark:hover:bg-background-dark/50 transition-colors group">
+<td class="px-4 py-3 text-text-primary-light dark:text-text-primary-dark text-sm font-medium text-center">1.1.4</td>
+<td class="px-4 py-3 text-text-secondary-light dark:text-text-secondary-dark text-sm">余土外运</td>
+<td class="px-4 py-3 text-text-secondary-light dark:text-text-secondary-dark text-sm">m³</td>
+<td class="px-4 py-3 text-text-primary-light dark:text-text-primary-dark text-sm font-medium text-right">950.00</td>
+<td class="px-4 py-3 text-sm text-right">
+<div class="flex items-center justify-end gap-2">
+<div class="w-16 overflow-hidden rounded-sm bg-border-light dark:bg-border-dark h-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<div class="h-full rounded-full bg-primary w-full"></div>
+</div>
+<span class="text-text-primary-light dark:text-text-primary-dark font-medium">$8.50</span>
+</div>
+</td>
+<td class="px-4 py-3 text-text-primary-light dark:text-text-primary-dark text-sm font-bold text-right">$8,075.00</td>
+</tr>
+<tr>
+<td class="px-4 py-3" colspan="6">
+<button class="w-full border-2 border-dashed border-border-light dark:border-border-dark rounded-lg py-2 flex items-center justify-center text-text-secondary-light dark:text-text-secondary-dark hover:text-primary hover:border-primary hover:bg-primary/5 transition-all gap-2 text-sm font-medium">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                                            手动新增清单项
+                                        </button>
+</td>
+</tr>
+</tbody>
+<tfoot class="bg-background-light dark:bg-background-dark border-t border-border-light dark:border-border-dark">
+<tr>
+<td class="px-4 py-4 text-right text-text-secondary-light dark:text-text-secondary-dark text-sm font-bold uppercase" colspan="4">本节小计</td>
+<td class="px-4 py-4 text-right text-text-primary-light dark:text-text-primary-dark text-lg font-bold" colspan="2">$23,675.00</td>
+</tr>
+</tfoot>
+</table>
+</div>
+</div>
+</div>
+</section>
+<aside class="w-80 flex-col border-l border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark hidden xl:flex shrink-0">
+<div class="p-4 border-b border-border-light dark:border-border-dark ai-gradient-bg flex items-center gap-3">
+<div class="flex items-center justify-center rounded-lg size-10 bg-white/20 dark:bg-black/20 text-primary backdrop-blur-sm">
+<span class="material-symbols-outlined">psychology</span>
+</div>
+<div>
+<h3 class="font-bold text-text-primary-light dark:text-text-primary-dark ai-gradient-text">AI 智能助手</h3>
+<p class="text-xs text-text-secondary-light dark:text-text-secondary-dark">智能提取工程量</p>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-text-primary-light dark:text-text-primary-dark">参考资料</label>
+<div class="border-2 border-dashed border-border-light dark:border-border-dark rounded-xl p-6 flex flex-col items-center justify-center text-center gap-2 bg-background-light dark:bg-background-dark hover:border-primary hover:bg-primary/5 transition-all cursor-pointer">
+<span class="material-symbols-outlined text-3xl text-text-secondary-light dark:text-text-secondary-dark">upload_file</span>
+<p class="text-sm font-medium text-text-primary-light dark:text-text-primary-dark">拖拽图纸或技术规范至此</p>
+<p class="text-xs text-text-secondary-light dark:text-text-secondary-dark">PDF, DWG, 或 DOCX (Max 50MB)</p>
+<button class="mt-2 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors">浏览文件</button>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-text-primary-light dark:text-text-primary-dark flex justify-between items-center">
+                        文字描述
+                        <span class="text-[10px] font-normal text-text-secondary-light dark:text-text-secondary-dark bg-background-light dark:bg-background-dark px-2 py-0.5 rounded">选填</span>
+</label>
+<textarea class="form-textarea w-full rounded-xl border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark text-sm p-3 focus:border-primary focus:ring-1 focus:ring-primary min-h-[120px] resize-none" placeholder="描述开挖要求、地质情况或特定材料需求..."></textarea>
+</div>
+<div class="flex flex-col gap-3">
+<label class="text-sm font-bold text-text-primary-light dark:text-text-primary-dark">生成范围</label>
+<div class="flex items-center gap-3 p-3 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark">
+<input checked="" class="rounded border-border-light dark:border-border-dark text-primary focus:ring-primary bg-surface-light dark:bg-surface-dark size-4 cursor-pointer" type="checkbox"/>
+<div class="flex flex-col">
+<span class="text-sm font-medium text-text-primary-light dark:text-text-primary-dark">清单项与特征描述</span>
+<span class="text-xs text-text-secondary-light dark:text-text-secondary-dark">生成标准清单子目</span>
+</div>
+</div>
+<div class="flex items-center gap-3 p-3 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark">
+<input checked="" class="rounded border-border-light dark:border-border-dark text-primary focus:ring-primary bg-surface-light dark:bg-surface-dark size-4 cursor-pointer" type="checkbox"/>
+<div class="flex flex-col">
+<span class="text-sm font-medium text-text-primary-light dark:text-text-primary-dark">工程量识别提取</span>
+<span class="text-xs text-text-secondary-light dark:text-text-secondary-dark">根据上传图纸智能估算</span>
+</div>
+</div>
+</div>
+</div>
+<div class="p-4 border-t border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark">
+<button class="w-full flex items-center justify-center rounded-xl h-11 px-4 bg-primary text-white text-sm font-bold shadow-md hover:bg-primary/90 hover:shadow-lg transition-all gap-2 relative overflow-hidden group">
+<div class="absolute inset-0 bg-white/20 w-0 group-hover:w-full transition-all duration-300 ease-out"></div>
+<span class="material-symbols-outlined text-[20px] relative z-10">magic_button</span>
+<span class="relative z-10">AI 一键生成清单项</span>
+</button>
+</div>
+</aside>
+</main>
+</div>
+</body></html>
