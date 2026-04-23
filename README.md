@@ -15,7 +15,7 @@
 |------|------|--------|
 | **前端** | React + TypeScript + Ant Design | Vite, TailwindCSS, Material Symbols |
 | **后端** | FastAPI + SQLAlchemy | Python 3.12, SQLite, Pydantic |
-| **AI** | 多模型支持 | OpenAI Compatible, 自定义 LLM |
+| **AI** | 多 Agent 框架 | OpenAI Compatible, 三层模型路由, 自研 Agent Framework |
 | **数据** | 结构化造价数据 | BOQ 清单、定额库、材料价格 |
 
 ## ✨ 核心特性
@@ -55,12 +55,14 @@
 - 🔗 **定额绑定**：清单项关联定额库
 - 🤖 **AI 匹配**：智能推荐最佳定额
 
-### 🤖 AI 助手
+### 🤖 AI Agent 框架
 
-- 💬 **智能问答**：基于项目上下文的专业对话
-- 💡 **优化建议**：供应商切换、材料替代方案
-- 🔄 **多轮对话**：上下文记忆 + 工具调用
-- 🔌 **多模型支持**：OpenAI / Claude / 自定义 LLM
+- 🧠 **Orchestrator**：智能意图路由 + 多 Agent 编排
+- � **12+ 专业 Agent**：估价、校验、分析、批量审核等
+- �️ **30+ 工具**：定额搜索、绑定、计算、批量操作
+- 🔌 **三层模型路由**：fast / balanced / powerful 自动选模型
+- 💬 **上下文记忆**：跨会话 Memory + Skill 知识库
+- ⚡ **性能优化**：批量工具调用、只读缓存、prompt 压缩
 
 ### ⚙️ 系统配置
 
@@ -93,21 +95,33 @@ graph TB
         B5[Validation Service]
     end
     
-    subgraph AI["🤖 AI 服务层"]
-        C1[OpenAI Provider]
-        C2[Custom LLM]
-        C3[Agent System]
+    subgraph AI["🤖 AI Agent 框架"]
+        C0[Orchestrator 路由]
+        C1[ProjectSetup Agent]
+        C2[Valuation Agent]
+        C3[Validation Agent]
+        C4[Insight Agent]
+        C5[Chat Agent]
+        C0 --> C1 & C2 & C3 & C4 & C5
+    end
+
+    subgraph Provider["🔌 Provider 层"]
+        P1[OpenAI Compatible]
+        P2[Model Router 三层路由]
+        P3[Tool Registry 30+]
     end
     
     subgraph Data["💾 数据层 (SQLite)"]
         D1[(Projects)]
         D2[(BOQ Items)]
         D3[(Bindings)]
-        D4[(Calc Results)]
+        D4[(Agent Memory)]
+        D5[(Agent Traces)]
     end
     
     Frontend -->|REST API| Backend
-    Backend -->|LLM Calls| AI
+    Backend -->|Delegate| AI
+    AI -->|LLM Calls| Provider
     Backend -->|ORM| Data
 ```
 
@@ -122,29 +136,40 @@ graph TB
 | **后端框架** | FastAPI | 高性能异步 API |
 | **ORM** | SQLAlchemy | 类型安全的数据库操作 |
 | **数据库** | SQLite | 轻量级嵌入式数据库 |
-| **AI 集成** | LangChain-like | 自研 Agent 框架 |
+| **AI 框架** | 自研 Agent Framework | BaseAgent + Orchestrator + Tool Registry |
 | **API 文档** | OpenAPI (Swagger) | 自动生成交互式文档 |
 
 ## 📦 项目结构
 
 ```
 building cost/
-├── frontend/                 # React 前端
+├── frontend/                    # React 前端
 │   ├── src/
-│   │   ├── pages/          # 页面组件
-│   │   ├── components/     # 通用组件
-│   │   ├── api.ts          # API 接口定义
-│   │   └── index.css       # 全局样式
+│   │   ├── pages/             # 页面组件 (10+)
+│   │   ├── components/        # 通用组件 (15+)
+│   │   ├── api.ts             # API 接口定义
+│   │   └── index.css          # 全局样式
 │   └── package.json
-├── backend/                  # FastAPI 后端
+├── backend/                     # FastAPI 后端
 │   ├── app/
-│   │   ├── api/            # API 路由
-│   │   ├── models/         # 数据模型
-│   │   ├── services/       # 业务逻辑
-│   │   └── ai/             # AI 服务
+│   │   ├── api/routes/        # API 路由 (15+ 模块)
+│   │   ├── models/            # 数据模型 (10+)
+│   │   ├── services/          # 业务逻辑
+│   │   └── ai/
+│   │       ├── agents/v2/     # Agent v2 (12+ Agents)
+│   │       ├── framework/     # Agent Framework 核心
+│   │       │   ├── base_agent.py       # 抽象基类 + 推理循环
+│   │       │   ├── model_router.py     # 三层模型路由
+│   │       │   ├── trace_collector.py   # 可观测性
+│   │       │   ├── memory_store.py      # 跨会话记忆
+│   │       │   └── streaming_executor.py# 流式工具执行
+│   │       ├── providers/     # LLM Provider 适配
+│   │       ├── tools/         # 工具定义 (30+)
+│   │       ├── skills/        # 领域知识库
+│   │       └── pipelines/     # 多 Agent 流水线
+│   ├── tests/                 # 测试 (5,600+ 行)
 │   └── requirements.txt
-├── docs/                     # 文档
-├── docker-compose.yml        # 开发环境
+├── docs/design/                 # 架构设计文档
 └── README.md
 ```
 
@@ -163,7 +188,7 @@ building cost/
 
 ```bash
 # 1. 克隆项目
-git clone <repo-url>
+git clone https://github.com/BruceLee1024/aicost.git
 cd "building cost"
 
 # 2. 启动后端（新终端）
@@ -207,6 +232,11 @@ AI_MODEL=gpt-4o
 AI_PROVIDER=openai
 AI_BASE_URL=http://localhost:11434/v1
 AI_MODEL=qwen2.5:14b
+
+# OPT-4: 三层模型路由（可选）
+AI_MODEL_FAST=deepseek-chat          # Tier 1: 简单查询
+# AI_MODEL 默认为 Tier 2: 标准分析
+AI_MODEL_POWERFUL=deepseek-reasoner   # Tier 3: 复杂推理
 ```
 
 3. 重启后端服务即可生效
@@ -216,29 +246,35 @@ AI_MODEL=qwen2.5:14b
 ### 代码统计
 
 ```
-📦 总计 28,434 行代码
-├── 🐍 Python         9,534 行  (后端逻辑 + AI 服务)
-├── 📘 TypeScript/TSX 7,000 行  (前端组件 + API)
-└── 🎨 CSS           11,900 行  (样式系统)
+📦 总计约 60,000 行代码 (239 文件)
+├── 🐍 Python (203 files)    35,126 行  (后端 + AI Agent 框架 + 测试)
+├── 📘 TypeScript/TSX (36)   13,402 行  (前端组件 + API)
+├── 🎨 CSS                    9,290 行  (样式系统)
+├── 📖 Markdown               2,533 行  (文档 + Skills)
+└── 🗄️ SQL                      121 行  (迁移脚本)
 ```
 
 ### 模块分布
 
 | 模块 | 文件数 | 核心功能 |
 |------|--------|----------|
-| **后端 API** | 25+ | 路由、服务、模型定义 |
-| **前端页面** | 12+ | Dashboard、项目、计价、图纸 |
-| **AI 服务** | 8+ | Provider、Agent、工具调用 |
-| **数据模型** | 15+ | SQLAlchemy ORM |
-| **测试用例** | 10+ | 单元测试 + 集成测试 |
+| **后端 API** | 35+ | 路由 (15 模块)、服务、Schema |
+| **前端页面** | 36 | Dashboard、项目、计价、图纸、知识图谱、AI 指挥中心 |
+| **AI Agent v2** | 12+ | Orchestrator + 专业 Agent (估价/校验/分析/开项) |
+| **Agent Framework** | 15+ | BaseAgent、ModelRouter、TraceCollector、ToolRegistry |
+| **AI 工具** | 30+ | 定额搜索、绑定、计算、批量审核、报告生成 |
+| **数据模型** | 10+ | SQLAlchemy ORM (含 Memory、Trace) |
+| **测试** | 5,677 行 | Agent Framework 全覆盖 |
 
 ### 功能覆盖
 
-- ✅ 7 个主要页面（Dashboard、项目、图纸、计价、报表、规则、设置）
-- ✅ 30+ REST API 端点
-- ✅ 15+ 数据库表
-- ✅ 5+ AI Agent 工具
-- ✅ 响应式设计（支持桌面端 + 平板）
+- ✅ 10+ 主要页面（Dashboard、项目、计价、图纸、报表、知识图谱、AI 指挥中心等）
+- ✅ 50+ REST API 端点
+- ✅ 15+ 数据库表（含 Agent Memory、Trace）
+- ✅ 12+ AI Agent（Orchestrator 智能路由）
+- ✅ 30+ Agent 工具（含批量工具调用）
+- ✅ 三层模型路由 (fast / balanced / powerful)
+- ✅ 响应式设计（桌面 + 平板）
 
 ## 🧪 开发指南
 
@@ -254,12 +290,42 @@ AI_MODEL=qwen2.5:14b
 3. 在 `backend/app/services/` 实现业务逻辑
 4. 更新 `frontend/src/api.ts` 接口定义
 
-### AI 功能扩展
-- 继承 `BaseAIProvider` 实现新 Provider
-- 在 `agents/` 目录添加新 Agent
-- 使用 `generate_with_tools()` 支持工具调用
+### AI Agent 开发
+
+1. **新建 Agent**：继承 `BaseAgent`，定义 `name`、`system_prompt`、`tool_names`
+2. **新建工具**：用 `@tool_def` 装饰器注册到 ToolRegistry
+3. **注册到 Orchestrator**：在 `orchestrator.py` 添加 delegate 路由
+4. **模型路由**：在 `model_router.py` 的 `_AGENT_TIER_MAP` 配置 tier
+
+```python
+# 示例：创建新 Agent
+class MyAgent(BaseAgent):
+    name = "my_agent"
+    description = "专业XX分析 Agent"
+    system_prompt = "你是一位专业的..."
+    tool_names = ["search_quotas", "calculate"]
+```
 
 ## 📝 版本历史
+
+<details>
+<summary><b>🤖 Sprint 8 (2026-04) - Agent Framework v2 全面升级</b></summary>
+
+- ✅ **Agent v2 框架**：BaseAgent 抽象基类 + 统一推理循环，12+ 专业 Agent
+- ✅ **Orchestrator**：智能意图路由，结构化 delegate 返回
+- ✅ **批量工具调用** (OPT-1)：`batch_search_standard_codes` 单次调用多关键词
+- ✅ **只读缓存** (OPT-2)：运行时缓存只读工具结果，破坏性操作自动失效
+- ✅ **Prompt 精简** (OPT-3)：Orchestrator prompt 压缩 62%，降低 token 消耗
+- ✅ **模型路由** (OPT-4)：三层 tier (fast/balanced/powerful) + 环境变量 override
+- ✅ **Context Compaction**：微压缩 + 全压缩 + 快照重注入
+- ✅ **Reflection**：无进展检测 + 强制 re-plan
+- ✅ **可观测性**：TraceCollector 记录 cache hits、reasoning、compaction
+- ✅ **Memory & Skills**：跨会话记忆 + 领域知识库
+- ✅ **流式执行**：StreamingToolExecutor 并发工具执行
+- ✅ **前端**：AI 指挥中心、知识图谱、Memory/Skills 面板
+- 📦 代码量：+30,000 行（含测试 5,677 行）
+
+</details>
 
 <details>
 <summary><b>🎯 Sprint 7 (2026-03) - 图纸识别与性能优化</b></summary>
@@ -360,10 +426,9 @@ AI_MODEL=qwen2.5:14b
 
 ### 🔗 相关链接
 
-- 📦 **项目仓库**：[GitHub Repo](repo-url)
-- 📚 **在线文档**：[Documentation](docs-url)
-- 🐛 **问题反馈**：[Issues](issues-url)
-- 💬 **讨论区**：[Discussions](discussions-url)
+- 📦 **项目仓库**：[GitHub Repo](https://github.com/BruceLee1024/aicost)
+- 🐛 **问题反馈**：[Issues](https://github.com/BruceLee1024/aicost/issues)
+- 💬 **讨论区**：[Discussions](https://github.com/BruceLee1024/aicost/discussions)
 
 ### 🤝 参与贡献
 
