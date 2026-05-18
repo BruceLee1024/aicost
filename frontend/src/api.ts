@@ -72,6 +72,7 @@ export interface ImportResult { imported: number; skipped: number; items: unknow
 export interface MatchCandidate {
   quota_item_id: number; quota_code: string; quota_name: string;
   unit: string; confidence: number; reasons: string[];
+  is_enterprise?: boolean; source_type?: "public" | "enterprise";
 }
 
 export interface Binding { id: number; boq_item_id: number; quota_item_id: number; coefficient: number }
@@ -557,6 +558,74 @@ export interface QuotaItemDTO {
   labor_qty: number;
   material_qty: number;
   machine_qty: number;
+  labor_fee?: number;
+  material_fee?: number;
+  machine_fee?: number;
+  base_price?: number;
+  version?: string;
+}
+
+export type OtherItemCategory = "provisional_sum" | "provisional_price" | "daywork" | "gc_service";
+
+export const OTHER_ITEM_CATEGORY_ZH: Record<OtherItemCategory, string> = {
+  provisional_sum: "暂列金额",
+  provisional_price: "暂估价",
+  daywork: "计日工",
+  gc_service: "总承包服务费",
+};
+
+export interface OtherItem {
+  id: number;
+  project_id: number;
+  category: OtherItemCategory;
+  name: string;
+  unit?: string;
+  quantity: number;
+  unit_price: number;
+  amount: number;
+  is_fixed: number;
+  tax_mode?: string;
+  note?: string;
+  sort_order: number;
+}
+
+export interface OtherItemCreate {
+  category: OtherItemCategory;
+  name: string;
+  unit?: string;
+  quantity?: number;
+  unit_price?: number;
+  amount?: number;
+  is_fixed?: number;
+  tax_mode?: string;
+  note?: string;
+  sort_order?: number;
+}
+
+export interface OtherItemUpdate extends Partial<OtherItemCreate> {}
+
+export interface OtherItemCategorySummary {
+  category: OtherItemCategory;
+  category_zh: string;
+  total: number;
+  count: number;
+}
+
+export interface OtherItemSummary {
+  grand_total: number;
+  categories: OtherItemCategorySummary[];
+}
+
+export interface RegulatoryFees {
+  project_id: number;
+  labor_base: number;
+  social_insurance_rate: number;
+  housing_fund_rate: number;
+  social_insurance_fee: number;
+  housing_fund_fee: number;
+  regulatory_fee_total: number;
+  breakdown?: { name: string; rate: number; base: number; amount: number }[];
+  provenance?: { formula: string; standard: string };
 }
 
 export interface QuotaListResponse {
@@ -1253,6 +1322,47 @@ export const api = {
 
   getQuotaStats: () => request<QuotaStatsResponse>("/quota-items/stats"),
 
+  importQuota2024: (file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return upload<{ imported: number; errors: string[] }>("/quota-items/import-2024", fd);
+  },
+
+  // ─── OtherItem APIs ────────────────────────────────────────────
+
+  listOtherItems: (pid: number, category?: string) => {
+    const qs = category ? `?category=${category}` : "";
+    return request<OtherItem[]>(`/projects/${pid}/other-items${qs}`);
+  },
+
+  createOtherItem: (pid: number, data: OtherItemCreate) =>
+    request<OtherItem>(`/projects/${pid}/other-items`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  updateOtherItem: (pid: number, itemId: number, data: OtherItemUpdate) =>
+    request<OtherItem>(`/projects/${pid}/other-items/${itemId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  deleteOtherItem: (pid: number, itemId: number) =>
+    request<{ deleted: boolean }>(`/projects/${pid}/other-items/${itemId}`, {
+      method: "DELETE",
+    }),
+
+  getOtherItemsSummary: (pid: number) =>
+    request<OtherItemSummary>(`/projects/${pid}/other-items/summary`),
+
+  getRegulatoryFees: (pid: number, params?: { social_insurance_rate?: number; housing_fund_rate?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.social_insurance_rate != null) qs.set("social_insurance_rate", String(params.social_insurance_rate));
+    if (params?.housing_fund_rate != null) qs.set("housing_fund_rate", String(params.housing_fund_rate));
+    const q = qs.toString();
+    return request<RegulatoryFees>(`/projects/${pid}/regulatory-fees${q ? `?${q}` : ""}`);
+  },
+
   // ─── Report APIs ──────────────────────────────────────────────
 
   getReport: (pid: number, opts?: { division?: string; search?: string }) => {
@@ -1263,11 +1373,282 @@ export const api = {
     return request<any>(`/projects/${pid}/report${q ? `?${q}` : ""}`);
   },
 
-  exportReport: (pid: number, format: "pdf" | "excel" = "pdf") => {
-    const url = `${BASE}/projects/${pid}/report/export?format=${format}`;
+  exportReport: (
+    pid: number,
+    format: "pdf" | "excel" | "docx" = "pdf",
+    opts?: { narrative?: boolean },
+  ) => {
+    const qs = new URLSearchParams({ format });
+    if (opts?.narrative) qs.set("narrative", "true");
+    const url = `${BASE}/projects/${pid}/report/export?${qs.toString()}`;
     return fetch(url).then((r) => {
       if (!r.ok) throw new Error(`Export failed: ${r.status}`);
       return r.blob();
     });
   },
+
+  // ─── Sprint 9 Phase 2: BOQ Drafts ─────────────────────────────
+
+  listBoqDrafts: (pid: number) =>
+    request<BoqDraftResponse[]>(`/projects/${pid}/boq-drafts`),
+
+  getBoqDraft: (pid: number, token: string) =>
+    request<BoqDraftResponse>(`/projects/${pid}/boq-drafts/${token}`),
+
+  commitBoqDraft: (pid: number, token: string, items: BoqDraftItem[]) =>
+    request<BoqDraftCommitResponse>(`/projects/${pid}/boq-drafts/${token}/commit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items }),
+    }),
+
+  discardBoqDraft: (pid: number, token: string) =>
+    request<{ discarded: boolean; token: string }>(
+      `/projects/${pid}/boq-drafts/${token}`,
+      { method: "DELETE" },
+    ),
+
+  // ─── Enterprise Quota Library ────────────────────────────────
+
+  listEnterpriseQuotas: (params: {
+    status?: string; source_type?: string; keyword?: string;
+    profession?: string; chapter?: string;
+    skip?: number; limit?: number;
+  } = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") qs.set(k, String(v));
+    });
+    const q = qs.toString();
+    return request<EnterpriseQuotaListResponse>(`/enterprise-quota${q ? `?${q}` : ""}`);
+  },
+
+  getEnterpriseQuotaStats: () =>
+    request<EnterpriseQuotaStats>("/enterprise-quota/stats"),
+
+  getEnterpriseQuota: (id: number) =>
+    request<EnterpriseQuotaItem>(`/enterprise-quota/${id}`),
+
+  createEnterpriseQuota: (data: EnterpriseQuotaCreate) =>
+    request<EnterpriseQuotaItem>("/enterprise-quota", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  updateEnterpriseQuota: (id: number, data: Partial<EnterpriseQuotaCreate>) =>
+    request<EnterpriseQuotaItem>(`/enterprise-quota/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  deleteEnterpriseQuota: (id: number) =>
+    request<{ deleted: boolean }>(`/enterprise-quota/${id}`, { method: "DELETE" }),
+
+  submitEnterpriseQuota: (id: number, actor = "") =>
+    request<EnterpriseQuotaItem>(`/enterprise-quota/${id}/submit`, {
+      method: "POST",
+      body: JSON.stringify({ actor }),
+    }),
+
+  approveEnterpriseQuota: (id: number, actor = "", comment = "") =>
+    request<EnterpriseQuotaItem>(`/enterprise-quota/${id}/approve`, {
+      method: "POST",
+      body: JSON.stringify({ actor, comment }),
+    }),
+
+  rejectEnterpriseQuota: (id: number, actor = "", comment = "") =>
+    request<EnterpriseQuotaItem>(`/enterprise-quota/${id}/reject`, {
+      method: "POST",
+      body: JSON.stringify({ actor, comment }),
+    }),
+
+  archiveEnterpriseQuota: (id: number, actor = "") =>
+    request<EnterpriseQuotaItem>(`/enterprise-quota/${id}/archive`, {
+      method: "POST",
+      body: JSON.stringify({ actor }),
+    }),
+
+  restoreEnterpriseQuota: (id: number, actor = "") =>
+    request<EnterpriseQuotaItem>(`/enterprise-quota/${id}/restore`, {
+      method: "POST",
+      body: JSON.stringify({ actor }),
+    }),
+
+  importEnterpriseQuotaExcel: (file: File, createdBy = "") => {
+    const fd = new FormData();
+    fd.append("file", file);
+    const qs = createdBy ? `?created_by=${encodeURIComponent(createdBy)}` : "";
+    return upload<{ imported: number; skipped: number; errors: string[] }>(
+      `/enterprise-quota/import${qs}`, fd,
+    );
+  },
+
+  downloadEnterpriseQuotaTemplateUrl: () =>
+    `${BASE}/enterprise-quota/template/download`,
+
+  // Precipitation candidates
+  listEnterpriseQuotaCandidates: (params: {
+    status?: string; min_confidence?: number; keyword?: string;
+    skip?: number; limit?: number;
+  } = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") qs.set(k, String(v));
+    });
+    const q = qs.toString();
+    return request<CandidateListResponse>(`/enterprise-quota/candidates/list${q ? `?${q}` : ""}`);
+  },
+
+  analyzeEnterpriseQuotaCandidates: () =>
+    request<AnalyzeResult>("/enterprise-quota/candidates/analyze", { method: "POST" }),
+
+  promoteEnterpriseQuotaCandidate: (id: number, actor = "", quotaCodeOverride?: string) =>
+    request<EnterpriseQuotaItem>(`/enterprise-quota/candidates/${id}/promote`, {
+      method: "POST",
+      body: JSON.stringify({ actor, quota_code_override: quotaCodeOverride ?? null }),
+    }),
+
+  dismissEnterpriseQuotaCandidate: (id: number, reason = "", actor = "") =>
+    request<EnterpriseQuotaCandidate>(`/enterprise-quota/candidates/${id}/dismiss`, {
+      method: "POST",
+      body: JSON.stringify({ reason, actor }),
+    }),
 };
+
+// ─── Sprint 9 Phase 2 types ──────────────────────────────────────
+
+export interface BoqDraftItem {
+  draft_id?: string | null;
+  code: string;
+  name: string;
+  unit: string;
+  quantity: number;
+  division: string;
+  characteristics: string;
+  remark: string;
+}
+
+export interface BoqDraftResponse {
+  token: string;
+  project_id: number;
+  created_at: number;
+  items: BoqDraftItem[];
+}
+
+export interface BoqDraftCommitResponse {
+  created_count: number;
+  created_ids: number[];
+  division_summary: Record<string, number>;
+  errors: string[];
+}
+
+// ─── Enterprise Quota types ────────────────────────────────────────
+
+export type EnterpriseQuotaStatus =
+  | "draft" | "in_review" | "approved" | "rejected" | "archived";
+
+export type EnterpriseQuotaSource = "manual" | "precipitated" | "imported";
+
+export interface EnterpriseQuotaItem {
+  id: number;
+  quota_code: string;
+  name: string;
+  unit: string;
+  labor_qty: number;
+  material_qty: number;
+  machine_qty: number;
+  labor_fee: number;
+  material_fee: number;
+  machine_fee: number;
+  base_price: number;
+  work_content: string;
+  applicable_scope: string;
+  chapter: string;
+  profession: string;
+  region: string;
+  version: string;
+  coefficient_default: number;
+  tags: string[];
+  status: EnterpriseQuotaStatus;
+  source_type: EnterpriseQuotaSource;
+  source_ref: Record<string, unknown>;
+  created_by: string;
+  created_at: string | null;
+  submitted_at: string | null;
+  reviewed_by: string;
+  reviewed_at: string | null;
+  review_comment: string;
+  usage_count: number;
+}
+
+export interface EnterpriseQuotaCreate {
+  quota_code: string;
+  name: string;
+  unit: string;
+  labor_qty?: number;
+  material_qty?: number;
+  machine_qty?: number;
+  labor_fee?: number;
+  material_fee?: number;
+  machine_fee?: number;
+  base_price?: number;
+  work_content?: string;
+  applicable_scope?: string;
+  chapter?: string;
+  profession?: string;
+  region?: string;
+  version?: string;
+  coefficient_default?: number;
+  tags?: string[];
+  source_type?: EnterpriseQuotaSource;
+  source_ref?: Record<string, unknown>;
+  created_by?: string;
+}
+
+export interface EnterpriseQuotaListResponse {
+  total: number;
+  items: EnterpriseQuotaItem[];
+}
+
+export interface EnterpriseQuotaStats {
+  total: number;
+  by_status: Record<string, number>;
+  by_source: Record<string, number>;
+  pending_review: number;
+  pending_candidates: number;
+  recent_created: number;
+}
+
+export interface EnterpriseQuotaCandidate {
+  id: number;
+  boq_code_pattern: string;
+  name_canonical: string;
+  unit: string;
+  suggested_labor_qty: number;
+  suggested_material_qty: number;
+  suggested_machine_qty: number;
+  suggested_unit_price: number;
+  suggested_coefficient: number;
+  sample_count: number;
+  confidence: number;
+  source_quota_ids: number[];
+  source_project_ids: number[];
+  evidence: Record<string, number>;
+  status: "pending" | "promoted" | "dismissed";
+  promoted_to_id: number | null;
+  dismiss_reason: string;
+  created_at: string | null;
+  last_analyzed_at: string | null;
+}
+
+export interface CandidateListResponse {
+  total: number;
+  items: EnterpriseQuotaCandidate[];
+}
+
+export interface AnalyzeResult {
+  snapshots_scanned: number;
+  bindings_scanned: number;
+  candidates_created: number;
+  candidates_updated: number;
+}

@@ -17,6 +17,7 @@ import ContactUs from "./pages/ContactUs";
 import KnowledgeGraph from "./pages/KnowledgeGraph";
 import AICommandCenter from "./pages/AICommandCenter";
 import QuotaLibrary from "./pages/QuotaLibrary";
+import EnterpriseQuotaLibrary from "./pages/EnterpriseQuotaLibrary";
 
 const NAV_ITEMS = [
   { path: "/", icon: "home", label: "首页" },
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
   { path: "/drawings", icon: "draw", label: "图纸库" },
   { path: "/pricing", icon: "calculate", label: "计价管理" },
   { path: "/quota-library", icon: "library_books", label: "定额库" },
+  { path: "/enterprise-quota", icon: "workspace_premium", label: "企业定额库" },
   { path: "/reports", icon: "description", label: "报表中心" },
   { path: "/rules", icon: "rule", label: "规则配置" },
   { path: "/graph", icon: "hub", label: "数据图谱" },
@@ -119,50 +121,97 @@ export default function App() {
       theme={{
         algorithm: theme.darkAlgorithm,
         token: {
-          colorPrimary: "#1456b8",
+          colorPrimary: "#1d6fe8",
+          colorPrimaryHover: "#2479f5",
           borderRadius: 8,
+          borderRadiusLG: 12,
+          borderRadiusSM: 6,
           fontFamily: '"Inter", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-          colorBgContainer: "#151b28",
-          colorBgElevated: "#1c2537",
-          colorBorder: "#1e293b",
+          colorBgContainer: "#131926",
+          colorBgElevated: "#1a2235",
+          colorBgSpotlight: "#1a2235",
+          colorBorder: "#1e2d42",
+          colorBorderSecondary: "#192438",
           colorText: "#e2e8f0",
           colorTextSecondary: "#94a3b8",
-          colorBgLayout: "#0c1017",
+          colorTextTertiary: "#5a7090",
+          colorBgLayout: "#0b0f1a",
           controlHeight: 36,
-          colorBgTextHover: "rgba(64, 150, 255, 0.06)",
-          colorBgTextActive: "rgba(64, 150, 255, 0.1)",
+          colorBgTextHover: "rgba(29, 111, 232, 0.08)",
+          colorBgTextActive: "rgba(29, 111, 232, 0.12)",
+          colorSplit: "rgba(29, 111, 232, 0.1)",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.55)",
+          boxShadowSecondary: "0 2px 8px rgba(0,0,0,0.4)",
         },
         components: {
+          Button: {
+            colorPrimary: "#1d6fe8",
+            colorPrimaryHover: "#2479f5",
+            boxShadow: "0 4px 16px rgba(29,111,232,0.3)",
+            borderRadius: 8,
+          },
           Card: {
-            colorBgContainer: "#151b28",
-            colorBorderSecondary: "#1e293b",
+            colorBgContainer: "#141f32",
+            colorBorderSecondary: "#1e2d42",
+            borderRadiusLG: 16,
           },
           Input: {
-            colorBgContainer: "#0f1520",
-            activeBorderColor: "#4096ff",
-            hoverBorderColor: "rgba(64, 150, 255, 0.35)",
+            colorBgContainer: "#0c1422",
+            activeBorderColor: "#1d6fe8",
+            hoverBorderColor: "rgba(29, 111, 232, 0.4)",
+            activeShadow: "0 0 0 2px rgba(29,111,232,0.15)",
+            borderRadius: 8,
           },
           Select: {
-            colorBgContainer: "#0f1520",
+            colorBgContainer: "#0c1422",
+            optionSelectedBg: "rgba(29,111,232,0.15)",
+            borderRadius: 8,
           },
           Table: {
-            colorBgContainer: "#151b28",
-            headerBg: "rgba(30, 41, 59, 0.5)",
-            rowHoverBg: "rgba(20, 86, 184, 0.06)",
+            colorBgContainer: "#141f32",
+            headerBg: "rgba(14, 23, 40, 0.8)",
+            rowHoverBg: "rgba(29, 111, 232, 0.05)",
+            headerSortActiveBg: "rgba(29, 111, 232, 0.08)",
+            borderColor: "#1e2d42",
           },
           Modal: {
-            contentBg: "#1c2537",
-            headerBg: "#1c2537",
+            contentBg: "#1a2235",
+            headerBg: "#1a2235",
+            borderRadiusLG: 16,
           },
           Drawer: {
-            colorBgElevated: "#1c2537",
+            colorBgElevated: "#141f32",
           },
           Collapse: {
-            colorBgContainer: "#151b28",
-            headerBg: "rgba(30, 41, 59, 0.3)",
+            colorBgContainer: "#131926",
+            headerBg: "rgba(20, 31, 50, 0.6)",
+            borderRadiusLG: 12,
           },
           Tag: {
-            borderRadiusSM: 4,
+            borderRadiusSM: 6,
+            colorBgContainer: "rgba(29,111,232,0.1)",
+          },
+          Tabs: {
+            inkBarColor: "#1d6fe8",
+            itemSelectedColor: "#60a5fa",
+            itemHoverColor: "#94a3b8",
+          },
+          Statistic: {
+            titleFontSize: 13,
+          },
+          Progress: {
+            defaultColor: "#1d6fe8",
+          },
+          Tooltip: {
+            colorBgSpotlight: "#1a2235",
+            colorTextLightSolid: "#e2e8f0",
+            borderRadius: 8,
+          },
+          Message: {
+            colorBgElevated: "#1a2235",
+          },
+          Notification: {
+            colorBgElevated: "#1a2235",
           },
         },
       }}
@@ -184,6 +233,7 @@ export default function App() {
                     <Route path="/projects/:id" element={<ProjectDetail />} />
                     <Route path="/pricing" element={<PricingManagement />} />
                     <Route path="/quota-library" element={<QuotaLibrary />} />
+                    <Route path="/enterprise-quota" element={<EnterpriseQuotaLibrary />} />
                     <Route path="/pricing/analysis/:projectId/:boqItemId" element={<UnitPriceAnalysis />} />
                     <Route path="/drawings" element={<DrawingRecognition />} />
                     <Route path="/drawings/:projectId" element={<DrawingRecognition />} />

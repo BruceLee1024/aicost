@@ -4,6 +4,7 @@ import {
   Button, Descriptions, Form, Input, InputNumber, Modal, Popconfirm, Progress,
   Select, Spin, Table, Tag, Upload, message,
 } from "antd";
+import { BizTable } from "./BizTable";
 import {
   BarChartOutlined, DeleteOutlined, EditOutlined, RobotOutlined, ThunderboltOutlined,
   UploadOutlined, CheckCircleOutlined, SyncOutlined,
@@ -644,10 +645,11 @@ export default function BoqTab({
       </div>
 
       {/* BOQ Table */}
-      <Table
+      <BizTable<BoqItem>
+        showIndex
         rowKey="id" columns={columns} dataSource={filtered}
-        loading={loading} size="small"
-        pagination={{ pageSize: 20, showSizeChanger: true, showTotal: (t) => `共 ${t} 条` }}
+        loading={loading}
+        pagination={{ pageSize: 20 }}
         rowSelection={{
           selectedRowKeys: selectedBoqIds,
           onChange: (keys) => setSelectedBoqIds(keys as number[]),

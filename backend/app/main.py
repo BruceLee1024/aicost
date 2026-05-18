@@ -18,6 +18,7 @@ from app.api.routes.orchestrator import router as orchestrator_router
 from app.api.routes.ai_traces import router as ai_traces_router
 from app.api.routes.memories import router as memories_router
 from app.api.routes.quota_items import router as quota_items_router
+from app.api.routes.rag import router as rag_router
 from app.api.routes.skills import router as skills_router
 from app.api.routes.knowledge_links import router as knowledge_links_router
 from app.api.routes.knowledge_notes import router as knowledge_notes_router
@@ -26,6 +27,7 @@ from app.api.routes.audit_logs import router as audit_logs_router
 from app.api.routes.bindings import router as bindings_router
 from app.api.routes.boq_generate import router as boq_generate_router
 from app.api.routes.drawing_recognition import router as drawing_recognition_router
+from app.api.routes.boq_drafts import router as boq_drafts_router
 from app.api.routes.boq_items import router as boq_items_router
 from app.api.routes.calculate import router as calculate_router
 from app.api.routes.collaboration import router as collaboration_router
@@ -45,6 +47,8 @@ from app.api.routes.standard_codes import router as standard_codes_router
 from app.api.routes.tasks import router as tasks_router
 from app.api.routes.validation import router as validation_router
 from app.api.routes.valuation_management import router as valuation_management_router
+from app.api.routes.other_items import router as other_items_router
+from app.api.routes.enterprise_quota import router as enterprise_quota_router
 from app.db.base import Base
 from app.db.session import engine
 
@@ -138,6 +142,7 @@ def _migrate_dev_schema() -> None:
 app.include_router(health_router)
 app.include_router(projects_router, prefix="/api")
 app.include_router(boq_items_router, prefix="/api")
+app.include_router(boq_drafts_router, prefix="/api")
 app.include_router(boq_generate_router, prefix="/api")
 app.include_router(bindings_router, prefix="/api")
 app.include_router(match_router, prefix="/api")
@@ -175,3 +180,6 @@ app.include_router(ai_traces_router, prefix="/api")
 app.include_router(memories_router, prefix="/api")
 app.include_router(skills_router, prefix="/api")
 app.include_router(quota_items_router, prefix="/api")
+app.include_router(other_items_router, prefix="/api")
+app.include_router(enterprise_quota_router, prefix="/api")
+app.include_router(rag_router, prefix="/api")

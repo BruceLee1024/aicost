@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  Button, Input, Select, Spin, Switch, Tag, Collapse, message, Progress, Table, Tooltip,
+  Button, Input, Select, Spin, Switch, Tag, Collapse, message, Progress, Tooltip,
   Skeleton, Empty, Alert,
 } from "antd";
+import { BizTable } from "../components/BizTable";
 import {
   RobotOutlined, SendOutlined, ThunderboltOutlined, CheckCircleOutlined,
   CloseCircleOutlined, ClockCircleOutlined, InfoCircleOutlined,
@@ -78,10 +79,10 @@ function renderToolResultSmart(raw: string): React.ReactNode {
           <WarningOutlined style={{ color: "#faad14" }} />
           <span>未绑定项汇总 ({items.length} 项)</span>
         </div>
-        <Table
+        <BizTable
+          showIndex
           dataSource={items}
-          rowKey={(r) => String(r.id || r.code)}
-          size="small"
+          rowKey={(r: any) => String(r.id || r.code)}
           pagination={items.length > 10 ? { pageSize: 10, size: "small" } : false}
           columns={[
             { title: "编码", dataIndex: "code", width: 80 },
@@ -834,10 +835,9 @@ function CostDashboard() {
           {stats.by_agent.length > 0 && (
             <div className="cost-section">
               <h4>按 Agent 分布</h4>
-              <Table
+              <BizTable
                 dataSource={stats.by_agent}
                 rowKey="agent_name"
-                size="small"
                 pagination={false}
                 columns={[
                   {

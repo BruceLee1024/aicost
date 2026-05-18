@@ -17,6 +17,12 @@ class BoqItemOut(BaseModel):
     rate: float = 0
     amount: float = 0
     remark: str = ""
+    code_segments_json: str = "{}"
+    feature_json: str = "[]"
+    calc_rule: str = ""
+    work_content: str = ""
+    is_provisional: int = 0
+    pricing_standard_id: int | None = None
 
 
 class BoqItemCreate(BaseModel):
@@ -32,6 +38,10 @@ class BoqItemCreate(BaseModel):
     description_en: str = ""
     rate: float = 0
     remark: str = ""
+    feature_json: str = ""
+    work_content: str = ""
+    is_provisional: int = 0
+    pricing_standard_id: int | None = None
 
 
 class BoqItemUpdate(BaseModel):
@@ -46,6 +56,11 @@ class BoqItemUpdate(BaseModel):
     description_en: str | None = None
     rate: float | None = None
     remark: str | None = None
+    feature_json: str | None = None
+    work_content: str | None = None
+    is_provisional: int | None = None
+    pricing_standard_id: int | None = None
+    code: str | None = None
 
 
 class BoqImportResult(BaseModel):

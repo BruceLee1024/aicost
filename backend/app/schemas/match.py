@@ -8,3 +8,5 @@ class MatchCandidateOut(BaseModel):
     unit: str
     confidence: float
     reasons: list[str]
+    is_enterprise: bool = False
+    source_type: str = "public"

@@ -64,6 +64,14 @@
 - 💬 **上下文记忆**：跨会话 Memory + Skill 知识库
 - ⚡ **性能优化**：批量工具调用、只读缓存、prompt 压缩
 
+### ⭐ 企业定额库（Sprint 9）
+
+- ✏️ **手工维护**：表单录入 + Excel 导入 + 标准模板下载
+- 🤖 **智能沉淀**：扫描历史项目快照 + BOQ-定额绑定，加权聚合生成候选条目
+- 📊 **置信度评分**：样本数 + 离散度 + 项目多样性三维度评估
+- 🔄 **审批工作流**：`draft → in_review → approved/rejected → archived` 五态状态机
+- ⭐ **AI 匹配优先**：已发布的企业定额在 BOQ 匹配时自动 +0.15 boost
+
 ### ⚙️ 系统配置
 
 - 📐 **费率规则**：管理费、利润、税金配置
@@ -307,6 +315,21 @@ class MyAgent(BaseAgent):
 ```
 
 ## 📝 版本历史
+
+<details open>
+<summary><b>⭐ Sprint 9 (2026-05) - 企业定额沉淀工具</b></summary>
+
+- ✅ **独立企业定额库**：新表 `enterprise_quota_items`，与公共定额并存，支持 5 态审批流（draft/in_review/approved/rejected/archived）
+- ✅ **三种数据来源**：手工录入 + Excel 导入（带模板下载） + 历史项目智能沉淀
+- ✅ **沉淀分析器**：`enterprise_quota_precipitation_service` 扫描所有 Snapshot + LineItemQuotaBinding，按 `(BOQ 编码前 9 位, 名称归一化, 单位)` 聚类生成 `EnterpriseQuotaCandidate` 候选条目
+- ✅ **置信度评分**：`0.5×样本饱和度 + 0.3×低离散度 + 0.2×项目多样性`
+- ✅ **匹配优先级**：`quota_match_service` 注入企业定额，已发布条目在 AI 匹配候选中自动 +0.15 boost 并标注 `⭐ 企业定额`
+- ✅ **新页面 `/enterprise-quota`**：4 张统计卡 + 5 个 Tab（已发布/待审批/草稿/智能推荐/已驳回）+ 编辑弹窗 + 审批意见框 + 紫色候选卡片网格（带置信度环形进度）
+- ✅ **17 个 REST 端点**：CRUD + 状态机（submit/approve/reject/archive/restore） + 导入 + 模板下载 + 候选 analyze/promote/dismiss
+- ✅ **测试**：21 个 pytest 用例（CRUD、状态机、Excel 导入、沉淀算法、归一化、候选提升）全部通过
+- 📦 新增文件：10 个后端 + 4 个前端
+
+</details>
 
 <details>
 <summary><b>🤖 Sprint 8 (2026-04) - Agent Framework v2 全面升级</b></summary>

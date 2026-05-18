@@ -32,6 +32,8 @@ def get_quota_candidates(
             unit=c.unit,
             confidence=c.confidence,
             reasons=c.reasons,
+            is_enterprise=c.is_enterprise,
+            source_type=c.source_type,
         )
         for c in candidates
     ]

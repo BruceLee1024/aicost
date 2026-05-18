@@ -24,3 +24,24 @@ class BoqItem(Base):
     rate: Mapped[float] = mapped_column(Float, nullable=False, default=0)  # HK rate-based pricing
     amount: Mapped[float] = mapped_column(Float, nullable=False, default=0)  # rate × quantity
     remark: Mapped[str] = mapped_column(String(500), nullable=False, default="")
+    # ── GB50500 合规扩展 (M1 双轨重构) ──
+    # 标准化 12 位编码段：{prof:"01", chapter:"01", section:"01", item:"001", seq:"001"}
+    code_segments_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    # 项目特征结构化 (键值对数组)，与 characteristics 字符串并存
+    feature_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+    # 工程量计算规则原文 (来自 CalcRuleDict / GB50854…)
+    calc_rule: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    # 该项工程量推导公式: e.g. "L×B×H = 12×8×3 = 288"
+    calc_formula: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    # 工作内容
+    work_content: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    # 1=暂估项 (其他项目费里 "暂估价" 在 BOQ 中的体现)
+    is_provisional: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # 三级分部分项树（GB50300）：父节点 BOQ 项 (分部 → 子分部 → 分项)
+    parent_division_id: Mapped[int | None] = mapped_column(
+        ForeignKey("boq_items.id"), nullable=True, default=None,
+    )
+    # 关联到本项目所采用的计价标准
+    pricing_standard_id: Mapped[int | None] = mapped_column(
+        ForeignKey("pricing_standards.id"), nullable=True, default=None,
+    )

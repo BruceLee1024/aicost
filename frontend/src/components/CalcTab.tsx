@@ -1,7 +1,8 @@
 import { useState } from "react";
 import {
-  Button, Card, Descriptions, Space, Statistic, Table, Tag, message,
+  Button, Card, Descriptions, Space, Statistic, Tag, message,
 } from "antd";
+import { BizTable } from "./BizTable";
 import { CalculatorOutlined, DownloadOutlined, RobotOutlined } from "@ant-design/icons";
 import type { CalcProvenance, CalcSummary, LineCalcResult } from "../api";
 import { api } from "../api";
@@ -119,10 +120,11 @@ export default function CalcTab({ projectId }: Props) {
               </Descriptions.Item>
             </Descriptions>
           </Card>
-          <Table
+          <BizTable<LineCalcResult>
+            showIndex
             rowKey="boq_item_id" columns={columns}
             dataSource={result.line_results}
-            pagination={false} size="small"
+            pagination={false}
             expandable={{
               expandedRowRender,
               onExpand: (expanded, record) => { if (expanded) loadProvenance(record.boq_item_id); },

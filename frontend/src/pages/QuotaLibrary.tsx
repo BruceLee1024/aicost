@@ -1,11 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
-import { Card, Input, Select, Table, Tag, Statistic, Row, Col, Spin, message } from "antd";
+import {
+  Button,
+  Card,
+  Col,
+  Input,
+  Row,
+  Spin,
+  Switch,
+  Tag,
+  Tooltip,
+  Upload,
+  message,
+} from "antd";
+import { UploadOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import type { QuotaItemDTO, QuotaChapterStat } from "../api";
 import { api } from "../api";
 import PageBreadcrumb from "../components/PageBreadcrumb";
+import { BizTable, bizCellCode, bizCellNum } from "../components/BizTable";
 
-const PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 20;
+const CHAPTER_COLLAPSED_COUNT = 12;
 
 const CHAPTER_COLORS: Record<string, string> = {
   "土石方工程": "#d4a017",
@@ -45,10 +60,15 @@ export default function QuotaLibrary() {
   const [stats, setStats] = useState<QuotaChapterStat[]>([]);
   const [statsTotal, setStatsTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [keyword, setKeyword] = useState("");
   const [chapter, setChapter] = useState<string | undefined>(undefined);
   const [searchText, setSearchText] = useState("");
+  const [chapterFilter, setChapterFilter] = useState("");
+  const [chaptersExpanded, setChaptersExpanded] = useState(false);
+  const [show2024Fees, setShow2024Fees] = useState(false);
 
   // Load stats once
   useEffect(() => {
@@ -62,8 +82,8 @@ export default function QuotaLibrary() {
   useEffect(() => {
     setLoading(true);
     api.listQuotaItems({
-      skip: (page - 1) * PAGE_SIZE,
-      limit: PAGE_SIZE,
+      skip: (page - 1) * pageSize,
+      limit: pageSize,
       chapter,
       keyword: keyword || undefined,
     }).then((res) => {
@@ -71,22 +91,59 @@ export default function QuotaLibrary() {
       setTotal(res.total);
     }).catch(() => message.error("加载定额失败"))
       .finally(() => setLoading(false));
-  }, [page, keyword, chapter]);
+  }, [page, pageSize, keyword, chapter]);
 
   // Reset page when filter changes
-  useEffect(() => { setPage(1); }, [keyword, chapter]);
+  useEffect(() => { setPage(1); }, [keyword, chapter, pageSize]);
 
-  const chapterOptions = useMemo(() =>
-    stats.map((s) => ({ label: `${s.chapter} (${s.count})`, value: s.chapter })),
-    [stats]
-  );
+  const filteredStats = useMemo(() => {
+    const q = chapterFilter.trim().toLowerCase();
+    if (!q) return stats;
+    return stats.filter((s) => s.chapter.toLowerCase().includes(q));
+  }, [stats, chapterFilter]);
+
+  const visibleStats =
+    chaptersExpanded || chapterFilter.trim()
+      ? filteredStats
+      : filteredStats.slice(0, CHAPTER_COLLAPSED_COUNT);
+
+  const isFiltered = Boolean(keyword || chapter);
+  const handleClearFilters = () => {
+    setKeyword("");
+    setSearchText("");
+    setChapter(undefined);
+    setChapterFilter("");
+  };
+
+  const handleImport2024 = async (file: File) => {
+    setImporting(true);
+    try {
+      const res = await api.importQuota2024(file);
+      message.success(`导入成功：${res.imported} 条定额`);
+      if (res.errors?.length) message.warning(`${res.errors.length} 条跳过`);
+      api.getQuotaStats().then((r) => { setStats(r.chapters); setStatsTotal(r.total); }).catch(() => {});
+      setPage(1);
+    } catch {
+      message.error("导入失败");
+    } finally {
+      setImporting(false);
+    }
+    return false;
+  };
+
+  const copyCode = (code: string) => {
+    navigator.clipboard?.writeText(code).then(
+      () => message.success(`已复制 ${code}`),
+      () => message.error("复制失败"),
+    );
+  };
 
   const columns: ColumnsType<QuotaItemDTO> = [
     {
       title: "编码",
       dataIndex: "quota_code",
-      width: 120,
-      render: (v: string) => <span style={{ fontFamily: "monospace", color: "#60a5fa" }}>{v}</span>,
+      width: 130,
+      render: (v: string) => bizCellCode(v, copyCode),
     },
     {
       title: "名称",
@@ -98,155 +155,299 @@ export default function QuotaLibrary() {
       dataIndex: "unit",
       width: 70,
       align: "center",
-    },
-    {
-      title: "章节",
-      dataIndex: "chapter",
-      width: 160,
       render: (v: string) => (
-        <Tag
-          color={CHAPTER_COLORS[v] || "#555"}
-          style={{ cursor: "pointer", fontSize: 12 }}
-          onClick={() => { setChapter(v); }}
-        >
-          {v}
-        </Tag>
+        <span style={{ color: "var(--text-secondary)" }}>{v}</span>
       ),
     },
-    {
-      title: "人工",
-      dataIndex: "labor_qty",
-      width: 80,
-      align: "right",
-      render: (v: number) => v > 0 ? v.toFixed(2) : "-",
-    },
-    {
-      title: "材料",
-      dataIndex: "material_qty",
-      width: 80,
-      align: "right",
-      render: (v: number) => v > 0 ? v.toFixed(2) : "-",
-    },
-    {
-      title: "机械",
-      dataIndex: "machine_qty",
-      width: 80,
-      align: "right",
-      render: (v: number) => v > 0 ? v.toFixed(2) : "-",
-    },
+    // Chapter column auto-hidden when a chapter filter is active.
+    ...(chapter
+      ? []
+      : ([
+          {
+            title: "章节",
+            dataIndex: "chapter",
+            width: 150,
+            render: (v: string) => (
+              <Tag
+                color={CHAPTER_COLORS[v] || "#555"}
+                style={{ cursor: "pointer" }}
+                onClick={() => setChapter(v)}
+              >
+                {v}
+              </Tag>
+            ),
+          },
+        ] as ColumnsType<QuotaItemDTO>)),
+    ...(show2024Fees
+      ? [
+          { title: "人工费", dataIndex: "labor_fee", width: 90, align: "right" as const,
+            sorter: (a: QuotaItemDTO, b: QuotaItemDTO) => (a.labor_fee ?? 0) - (b.labor_fee ?? 0),
+            render: (v: number) => bizCellNum(v ?? 0) },
+          { title: "材料费", dataIndex: "material_fee", width: 90, align: "right" as const,
+            sorter: (a: QuotaItemDTO, b: QuotaItemDTO) => (a.material_fee ?? 0) - (b.material_fee ?? 0),
+            render: (v: number) => bizCellNum(v ?? 0) },
+          { title: "机械费", dataIndex: "machine_fee", width: 90, align: "right" as const,
+            sorter: (a: QuotaItemDTO, b: QuotaItemDTO) => (a.machine_fee ?? 0) - (b.machine_fee ?? 0),
+            render: (v: number) => bizCellNum(v ?? 0) },
+          { title: "基价", dataIndex: "base_price", width: 90, align: "right" as const,
+            sorter: (a: QuotaItemDTO, b: QuotaItemDTO) => (a.base_price ?? 0) - (b.base_price ?? 0),
+            render: (v: number) => bizCellNum(v ?? 0) },
+        ]
+      : [
+          { title: "人工", dataIndex: "labor_qty", width: 80, align: "right" as const,
+            sorter: (a: QuotaItemDTO, b: QuotaItemDTO) => (a.labor_qty ?? 0) - (b.labor_qty ?? 0),
+            render: (v: number) => bizCellNum(v) },
+          { title: "材料", dataIndex: "material_qty", width: 80, align: "right" as const,
+            sorter: (a: QuotaItemDTO, b: QuotaItemDTO) => (a.material_qty ?? 0) - (b.material_qty ?? 0),
+            render: (v: number) => bizCellNum(v) },
+          { title: "机械", dataIndex: "machine_qty", width: 80, align: "right" as const,
+            sorter: (a: QuotaItemDTO, b: QuotaItemDTO) => (a.machine_qty ?? 0) - (b.machine_qty ?? 0),
+            render: (v: number) => bizCellNum(v) },
+        ]),
   ];
+
+  const topChapter = stats[0];
 
   return (
     <div className="page-container" style={{ padding: 24, maxWidth: 1400 }}>
       <PageBreadcrumb items={[{ label: "定额库" }]} />
 
-      {/* Stats Row */}
-      <Row gutter={16} style={{ marginBottom: 20 }}>
-        <Col span={6}>
-          <Card size="small" style={{ background: "rgba(20, 86, 184, 0.08)", border: "1px solid #1e293b" }}>
-            <Statistic title="定额总数" value={statsTotal} valueStyle={{ color: "#60a5fa", fontSize: 28 }} />
-          </Card>
+      {/* Stats Row — responsive */}
+      <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
+        <Col xs={12} sm={12} md={6}>
+          <div className="mini-stat-card">
+            <div className="mini-stat-card-head">
+              <span style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 600 }}>定额总数</span>
+              <div className="mini-stat-card-icon blue">
+                <span className="material-symbols-outlined">inventory_2</span>
+              </div>
+            </div>
+            <div className="mini-stat-card-value" style={{ fontSize: 26 }}>{statsTotal.toLocaleString()}</div>
+            <div className="mini-stat-card-label">条定额条目</div>
+          </div>
         </Col>
-        <Col span={6}>
-          <Card size="small" style={{ background: "rgba(32, 178, 170, 0.08)", border: "1px solid #1e293b" }}>
-            <Statistic title="章节分类" value={stats.length} valueStyle={{ color: "#20b2aa", fontSize: 28 }} />
-          </Card>
+        <Col xs={12} sm={12} md={6}>
+          <div className="mini-stat-card">
+            <div className="mini-stat-card-head">
+              <span style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 600 }}>章节分类</span>
+              <div className="mini-stat-card-icon emerald">
+                <span className="material-symbols-outlined">category</span>
+              </div>
+            </div>
+            <div className="mini-stat-card-value" style={{ fontSize: 26 }}>{stats.length}</div>
+            <div className="mini-stat-card-label">个分类</div>
+          </div>
         </Col>
-        <Col span={6}>
-          <Card size="small" style={{ background: "rgba(218, 165, 32, 0.08)", border: "1px solid #1e293b" }}>
-            <Statistic
-              title="当前筛选"
-              value={total}
-              suffix="条"
-              valueStyle={{ color: "#daa520", fontSize: 28 }}
-            />
-          </Card>
+        <Col xs={12} sm={12} md={6}>
+          <div
+            className="mini-stat-card"
+            style={isFiltered ? { borderColor: "rgba(218, 165, 32, 0.4)" } : undefined}
+          >
+            <div className="mini-stat-card-head">
+              <span style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 600 }}>
+                {isFiltered ? "当前筛选" : "当前显示"}
+              </span>
+              <div className={`mini-stat-card-icon ${isFiltered ? "gold" : "blue"}`}>
+                <span className="material-symbols-outlined">{isFiltered ? "filter_alt" : "visibility"}</span>
+              </div>
+            </div>
+            <div
+              className="mini-stat-card-value"
+              style={{ fontSize: 26, color: isFiltered ? "#fbbf24" : undefined }}
+            >
+              {total}
+            </div>
+            <div className="mini-stat-card-label">条</div>
+          </div>
         </Col>
-        <Col span={6}>
-          <Card size="small" style={{ background: "rgba(123, 104, 238, 0.08)", border: "1px solid #1e293b" }}>
-            <Statistic
-              title="最大章节"
-              value={stats.length > 0 ? stats[0].chapter : "-"}
-              valueStyle={{ color: "#7b68ee", fontSize: 16, lineHeight: "32px" }}
-            />
-          </Card>
+        <Col xs={24} sm={24} md={6}>
+          <div className="mini-stat-card">
+            <div className="mini-stat-card-head">
+              <span style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 600 }}>最大章节</span>
+              <div className="mini-stat-card-icon purple">
+                <span className="material-symbols-outlined">trending_up</span>
+              </div>
+            </div>
+            {topChapter ? (
+              <>
+                <div
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: "#a78bfa",
+                    cursor: "pointer",
+                    lineHeight: 1.3,
+                    letterSpacing: "-0.01em",
+                  }}
+                  onClick={() => setChapter(topChapter.chapter)}
+                >
+                  {topChapter.chapter}
+                </div>
+                <div className="mini-stat-card-label">{topChapter.count} 条明细</div>
+              </>
+            ) : (
+              <div className="mini-stat-card-value" style={{ color: "var(--text-muted)", fontSize: 18 }}>—</div>
+            )}
+          </div>
         </Col>
       </Row>
 
-      {/* Filters */}
+      {/* Search bar — only the global keyword search; chapter is in the cloud below */}
       <Card
         size="small"
-        style={{ marginBottom: 16, border: "1px solid #1e293b" }}
+        className="ql-filter-card"
+        style={{ marginBottom: 12 }}
         bodyStyle={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}
       >
-        <span className="material-symbols-outlined" style={{ color: "#94a3b8", fontSize: 20 }}>search</span>
+        <span className="material-symbols-outlined" style={{ color: "#94a3b8", fontSize: 20 }}>
+          search
+        </span>
         <Input.Search
-          placeholder="搜索定额名称..."
+          placeholder="搜索定额名称…"
           allowClear
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           onSearch={(v) => setKeyword(v)}
-          style={{ width: 280 }}
+          style={{ width: 320 }}
         />
-        <Select
-          placeholder="选择章节"
-          allowClear
-          showSearch
-          optionFilterProp="label"
-          value={chapter}
-          onChange={(v) => setChapter(v)}
-          options={chapterOptions}
-          style={{ minWidth: 240 }}
-        />
-        {(keyword || chapter) && (
+        {chapter && (
+          <Tag
+            closable
+            onClose={() => setChapter(undefined)}
+            color={CHAPTER_COLORS[chapter] || "#555"}
+            style={{ fontSize: 13 }}
+          >
+            章节：{chapter}
+          </Tag>
+        )}
+        {keyword && (
+          <Tag
+            closable
+            onClose={() => {
+              setKeyword("");
+              setSearchText("");
+            }}
+          >
+            关键词：{keyword}
+          </Tag>
+        )}
+        {isFiltered && (
           <a
             style={{ color: "#60a5fa", cursor: "pointer", fontSize: 13 }}
-            onClick={() => { setKeyword(""); setSearchText(""); setChapter(undefined); }}
+            onClick={handleClearFilters}
           >
-            清除筛选
+            清除全部
           </a>
         )}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
+          <Tooltip title="显示2024版费用单价列（人工费/材料费/机械费/基价）">
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>2024费用列</span>
+            <Switch
+              size="small"
+              checked={show2024Fees}
+              onChange={setShow2024Fees}
+              style={{ marginLeft: 6 }}
+            />
+          </Tooltip>
+          <Upload
+            accept=".xlsx,.xls"
+            showUploadList={false}
+            beforeUpload={(file) => { handleImport2024(file); return false; }}
+          >
+            <Button
+              size="small"
+              icon={<UploadOutlined />}
+              loading={importing}
+              type="dashed"
+            >
+              导入2024定额
+            </Button>
+          </Upload>
+        </div>
       </Card>
 
-      {/* Chapter Tag Cloud */}
+      {/* Chapter Tag Cloud — collapsible + searchable */}
       <Card
         size="small"
-        style={{ marginBottom: 16, border: "1px solid #1e293b" }}
-        bodyStyle={{ display: "flex", gap: 6, flexWrap: "wrap" }}
+        className="ql-chapter-card"
+        style={{ marginBottom: 16 }}
+        bodyStyle={{ display: "flex", flexDirection: "column", gap: 8 }}
       >
-        {stats.map((s) => (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 600 }}>
+            按章节筛选
+          </span>
+          <Input
+            size="small"
+            placeholder="过滤章节…"
+            allowClear
+            value={chapterFilter}
+            onChange={(e) => setChapterFilter(e.target.value)}
+            style={{ width: 180 }}
+          />
+          <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--text-muted)" }}>
+            共 {filteredStats.length} / {stats.length}
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           <Tag
-            key={s.chapter}
-            color={chapter === s.chapter ? CHAPTER_COLORS[s.chapter] || "#555" : undefined}
-            style={{
-              cursor: "pointer",
-              opacity: chapter && chapter !== s.chapter ? 0.4 : 1,
-              transition: "opacity 0.2s",
-            }}
-            onClick={() => setChapter(chapter === s.chapter ? undefined : s.chapter)}
+            color={!chapter ? "blue" : undefined}
+            style={{ cursor: "pointer" }}
+            onClick={() => setChapter(undefined)}
           >
-            {s.chapter} ({s.count})
+            全部 ({statsTotal})
           </Tag>
-        ))}
+          {visibleStats.map((s) => {
+            const active = chapter === s.chapter;
+            const dimmed = chapter && !active;
+            return (
+              <Tag
+                key={s.chapter}
+                color={active ? CHAPTER_COLORS[s.chapter] || "#555" : undefined}
+                style={{
+                  cursor: "pointer",
+                  opacity: dimmed ? 0.4 : 1,
+                  transition: "opacity 0.2s",
+                }}
+                onClick={() => setChapter(active ? undefined : s.chapter)}
+              >
+                {s.chapter} ({s.count})
+              </Tag>
+            );
+          })}
+          {!chapterFilter.trim() &&
+            filteredStats.length > CHAPTER_COLLAPSED_COUNT && (
+              <Button
+                type="link"
+                size="small"
+                style={{ padding: "0 8px", height: 22, fontSize: 12 }}
+                onClick={() => setChaptersExpanded((v) => !v)}
+              >
+                {chaptersExpanded
+                  ? "收起"
+                  : `展开全部 (+${filteredStats.length - CHAPTER_COLLAPSED_COUNT})`}
+              </Button>
+            )}
+        </div>
       </Card>
 
       {/* Table */}
       <Spin spinning={loading}>
-        <Table
+        <BizTable<QuotaItemDTO>
+          showIndex
           dataSource={items}
           columns={columns}
           rowKey="id"
-          size="small"
           pagination={{
             current: page,
-            pageSize: PAGE_SIZE,
+            pageSize,
             total,
-            showSizeChanger: false,
-            showTotal: (t) => `共 ${t} 条`,
-            onChange: (p) => setPage(p),
+            onChange: (p, ps) => {
+              setPage(p);
+              if (ps !== pageSize) setPageSize(ps);
+            },
           }}
-          scroll={{ y: 480 }}
-          style={{ border: "1px solid #1e293b", borderRadius: 8, overflow: "hidden" }}
+          scroll={{ y: 520 }}
         />
       </Spin>
     </div>

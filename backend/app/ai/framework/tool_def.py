@@ -402,16 +402,22 @@ def _extract_params(func: Callable) -> list[ParamDef]:
         if p.kind in (p.VAR_POSITIONAL, p.VAR_KEYWORD):
             continue
 
-        py_type = hints.get(pname, str)
+        has_default = p.default is not inspect.Parameter.empty
+        py_type = hints.get(pname, None)
+        if py_type is None:
+            # Infer from default value when no annotation is present
+            if has_default and p.default is not None and not isinstance(p.default, bool):
+                py_type = type(p.default)
+            else:
+                py_type = str
         # Handle Optional[X] → X
         origin = getattr(py_type, "__origin__", None)
         if origin is not None:
-            args = getattr(py_type, "__args__", ())
-            if args:
-                py_type = args[0]
+            hint_args = getattr(py_type, "__args__", ())
+            if hint_args:
+                py_type = hint_args[0]
 
         json_type = _PY_TO_JSON_TYPE.get(py_type, "string")
-        has_default = p.default is not inspect.Parameter.empty
         params.append(ParamDef(
             name=pname,
             json_type=json_type,

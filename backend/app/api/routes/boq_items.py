@@ -9,6 +9,11 @@ from app.models.boq_item import BoqItem
 from app.models.line_item_quota_binding import LineItemQuotaBinding
 from app.schemas.boq_import import BoqItemCreate, BoqItemOut, BoqItemUpdate
 from app.services.audit_service import write_audit_log
+from app.services.code_parser import (
+    segments_to_json,
+    feature_text_to_json,
+    build_feature_json,
+)
 
 router = APIRouter(prefix="/projects", tags=["boq-items"])
 
@@ -27,6 +32,12 @@ def _to_out(r: BoqItem) -> BoqItemOut:
         rate=r.rate,
         amount=r.amount,
         remark=r.remark or "",
+        code_segments_json=r.code_segments_json or "{}",
+        feature_json=r.feature_json or "[]",
+        calc_rule=r.calc_rule or "",
+        work_content=r.work_content or "",
+        is_provisional=r.is_provisional or 0,
+        pricing_standard_id=r.pricing_standard_id,
     )
 
 
@@ -60,6 +71,11 @@ def create_boq_item(
     db: Session = Depends(get_db),
 ) -> BoqItemOut:
     amount = payload.rate * payload.quantity if payload.rate else 0
+    # Auto-derive structured fields from code and characteristics
+    code_segs_json = segments_to_json(payload.code)
+    feat_json = payload.feature_json
+    if not feat_json and payload.characteristics:
+        feat_json = feature_text_to_json(payload.characteristics)
     item = BoqItem(
         project_id=project_id,
         code=payload.code,
@@ -76,6 +92,11 @@ def create_boq_item(
         rate=payload.rate,
         amount=amount,
         remark=payload.remark,
+        code_segments_json=code_segs_json,
+        feature_json=feat_json or "[]",
+        work_content=payload.work_content,
+        is_provisional=payload.is_provisional,
+        pricing_standard_id=payload.pricing_standard_id,
     )
     db.add(item)
     db.commit()
@@ -123,6 +144,19 @@ def update_boq_item(
         row.rate = payload.rate
     if payload.remark is not None:
         row.remark = payload.remark
+    if payload.code is not None:
+        row.code = payload.code
+        row.code_segments_json = segments_to_json(payload.code)
+    if payload.feature_json is not None:
+        row.feature_json = payload.feature_json
+    elif payload.characteristics is not None:
+        row.feature_json = feature_text_to_json(payload.characteristics)
+    if payload.work_content is not None:
+        row.work_content = payload.work_content
+    if payload.is_provisional is not None:
+        row.is_provisional = payload.is_provisional
+    if payload.pricing_standard_id is not None:
+        row.pricing_standard_id = payload.pricing_standard_id
     # Recompute amount for HK rate-based pricing
     row.amount = row.rate * row.quantity
     row.is_dirty = 1

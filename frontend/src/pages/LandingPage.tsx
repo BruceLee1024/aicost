@@ -1,4 +1,7 @@
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useScrollReveal } from "../hooks/useScrollReveal";
+import { useCountUp } from "../hooks/useCountUp";
 
 const FEATURES = [
   {
@@ -51,8 +54,70 @@ const FOOTER_LINKS = {
   服务: ["私有化部署", "定制化开发", "专家咨询", "培训支持"],
 };
 
+/**
+ * Stat card with count-up animation on view.
+ * Pulled out so the hook can attach a ref per card.
+ */
+function StatCard({ value, label }: { value: string; label: string }) {
+  const { ref, display } = useCountUp(value);
+  return (
+    <div
+      className="landing-stat-card"
+      ref={ref as React.RefObject<HTMLDivElement>}
+    >
+      <span className="landing-stat-value">{display}</span>
+      <span className="landing-stat-label">{label}</span>
+    </div>
+  );
+}
+
 export default function LandingPage() {
   const navigate = useNavigate();
+
+  // Hero parallax: track mouse position relative to hero element and
+  // expose normalized -1..1 values via CSS custom properties --mx / --my.
+  const heroRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+    const reduceMotion =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) return;
+
+    let raf = 0;
+    const onMove = (e: MouseEvent) => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const rect = el.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width;
+        const y = (e.clientY - rect.top) / rect.height;
+        // Map [0,1] → [-1,1]
+        el.style.setProperty("--mx", String((x - 0.5) * 2));
+        el.style.setProperty("--my", String((y - 0.5) * 2));
+      });
+    };
+    const onLeave = () => {
+      cancelAnimationFrame(raf);
+      el.style.setProperty("--mx", "0");
+      el.style.setProperty("--my", "0");
+    };
+    el.addEventListener("mousemove", onMove);
+    el.addEventListener("mouseleave", onLeave);
+    return () => {
+      cancelAnimationFrame(raf);
+      el.removeEventListener("mousemove", onMove);
+      el.removeEventListener("mouseleave", onLeave);
+    };
+  }, []);
+
+  // Scroll-reveal refs — each section gets its own.
+  const statsRef = useScrollReveal<HTMLDivElement>();
+  const featuresHeaderRef = useScrollReveal<HTMLDivElement>();
+  const featuresGridRef = useScrollReveal<HTMLDivElement>();
+  const workflowHeaderRef = useScrollReveal<HTMLDivElement>();
+  const workflowGridRef = useScrollReveal<HTMLDivElement>();
+  const ctaRef = useScrollReveal<HTMLDivElement>();
 
   return (
     <div className="landing">
@@ -76,7 +141,7 @@ export default function LandingPage() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="landing-hero">
+      <section className="landing-hero" ref={heroRef}>
         <div className="landing-hero-glow" />
         <div className="landing-container landing-hero-inner">
           <span className="landing-hero-badge">
@@ -103,12 +168,12 @@ export default function LandingPage() {
 
       {/* ── Stats ── */}
       <section className="landing-stats" id="stats">
-        <div className="landing-container landing-stats-grid">
+        <div
+          className="landing-container landing-stats-grid landing-reveal-stagger"
+          ref={statsRef}
+        >
           {STATS.map((s) => (
-            <div key={s.label} className="landing-stat-card">
-              <span className="landing-stat-value">{s.value}</span>
-              <span className="landing-stat-label">{s.label}</span>
-            </div>
+            <StatCard key={s.label} value={s.value} label={s.label} />
           ))}
         </div>
       </section>
@@ -116,14 +181,20 @@ export default function LandingPage() {
       {/* ── Features ── */}
       <section className="landing-features" id="features">
         <div className="landing-container">
-          <div className="landing-section-header">
+          <div
+            className="landing-section-header landing-reveal"
+            ref={featuresHeaderRef}
+          >
             <span className="landing-section-badge">核心能力</span>
             <h2 className="landing-section-title">全方位赋能建筑造价</h2>
             <p className="landing-section-desc">
               覆盖造价管理全生命周期的 AI 能力矩阵，从数据采集到决策输出。
             </p>
           </div>
-          <div className="landing-features-grid">
+          <div
+            className="landing-features-grid landing-reveal-stagger"
+            ref={featuresGridRef}
+          >
             {FEATURES.map((f) => (
               <div key={f.title} className="landing-feature-card">
                 <div className="landing-feature-icon" style={{ background: f.gradient }}>
@@ -140,11 +211,17 @@ export default function LandingPage() {
       {/* ── Workflow ── */}
       <section className="landing-workflow">
         <div className="landing-container">
-          <div className="landing-section-header">
+          <div
+            className="landing-section-header landing-reveal"
+            ref={workflowHeaderRef}
+          >
             <span className="landing-section-badge">工作流程</span>
             <h2 className="landing-section-title">四步完成智能造价</h2>
           </div>
-          <div className="landing-workflow-grid">
+          <div
+            className="landing-workflow-grid landing-reveal-stagger"
+            ref={workflowGridRef}
+          >
             {[
               { step: "01", icon: "upload_file", title: "导入图纸 / 创建项目", desc: "上传 BIM 模型或施工图，AI 自动识别构件信息" },
               { step: "02", icon: "auto_fix_high", title: "AI 生成工程量清单", desc: "智能分析图纸数据，一键生成规范化的 BOQ 清单" },
@@ -167,7 +244,10 @@ export default function LandingPage() {
       {/* ── CTA ── */}
       <section className="landing-cta" id="cta">
         <div className="landing-cta-glow" />
-        <div className="landing-container landing-cta-inner">
+        <div
+          className="landing-container landing-cta-inner landing-reveal"
+          ref={ctaRef}
+        >
           <h2>准备好提升您的造价效率了吗？</h2>
           <p>加入超过 500 家领先建筑单位，利用 AI 技术全面提升您的核心竞争力。</p>
           <div className="landing-hero-actions">

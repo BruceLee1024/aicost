@@ -10,7 +10,6 @@ import {
   Select,
   Space,
   Steps,
-  Table,
   Tabs,
   Tag,
   message,
@@ -28,6 +27,7 @@ import type {
 } from "../api";
 import { api } from "../api";
 import PageBreadcrumb from "../components/PageBreadcrumb";
+import { BizTable } from "../components/BizTable";
 
 const STANDARD_OPTIONS = [
   { label: "GB/T50500-2024", value: "GB/T50500-2024" },
@@ -279,7 +279,7 @@ export default function PricingManagement() {
                   <div style={{ marginBottom: 12 }}>
                     <Button type="primary" onClick={() => setMeasurementOpen(true)}>新增计量</Button>
                   </div>
-                  <Table rowKey="id" size="small" columns={measurementColumns} dataSource={measurements} pagination={{ pageSize: 8 }} />
+                  <BizTable showIndex rowKey="id" columns={measurementColumns} dataSource={measurements} pagination={{ pageSize: 8 }} />
                 </>
               ),
             },
@@ -291,7 +291,7 @@ export default function PricingManagement() {
                   <div style={{ marginBottom: 12 }}>
                     <Button type="primary" onClick={() => setAdjustmentOpen(true)}>新增调整单</Button>
                   </div>
-                  <Table rowKey="id" size="small" columns={adjustmentColumns} dataSource={adjustments} pagination={{ pageSize: 8 }} />
+                  <BizTable showIndex rowKey="id" columns={adjustmentColumns} dataSource={adjustments} pagination={{ pageSize: 8 }} />
                 </>
               ),
             },
@@ -303,7 +303,7 @@ export default function PricingManagement() {
                   <div style={{ marginBottom: 12 }}>
                     <Button type="primary" onClick={() => setPaymentOpen(true)}>新增支付证书</Button>
                   </div>
-                  <Table rowKey="id" size="small" columns={paymentColumns} dataSource={payments} pagination={{ pageSize: 8 }} />
+                  <BizTable showIndex rowKey="id" columns={paymentColumns} dataSource={payments} pagination={{ pageSize: 8 }} />
                 </>
               ),
             },

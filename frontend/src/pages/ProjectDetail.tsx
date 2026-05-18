@@ -14,8 +14,9 @@ import SnapshotTab from "../components/SnapshotTab";
 import SettingsTab from "../components/SettingsTab";
 import ReportView from "../components/ReportView";
 import ProjectSetupWizard from "../components/ProjectSetupWizard";
+import OtherItemsTab from "../components/OtherItemsTab";
 
-type View = "dashboard" | "boq" | "binding" | "calc" | "validation" | "snapshot" | "report" | "setup" | "settings";
+type View = "dashboard" | "boq" | "binding" | "calc" | "validation" | "snapshot" | "report" | "setup" | "settings" | "other";
 
 interface NavItem {
   key: View;
@@ -32,6 +33,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: "snapshot", icon: "photo_camera", label: "快照对比" },
   { key: "report", icon: "summarize", label: "计价报告" },
   { key: "setup", icon: "rocket_launch", label: "智能开项" },
+  { key: "other", icon: "receipt_long", label: "其他项目费" },
   { key: "settings", icon: "settings", label: "设置" },
 ];
 
@@ -44,6 +46,7 @@ const VIEW_META: Record<View, { title: string; desc: string }> = {
   snapshot: { title: "快照 & 差异", desc: "创建快照并对比历史版本" },
   report: { title: "计价报告", desc: "查看费用汇总、分部分项计价表，导出 Excel/PDF" },
   setup: { title: "智能开项", desc: "输入工程描述，AI 自动生成工程量清单" },
+  other: { title: "其他项目费", desc: "管理暂列金额、暂估价、计日工、总承包服务费及规费明细" },
   settings: { title: "项目设置", desc: "规则包、材料价格、成员管理" },
 };
 
@@ -153,6 +156,7 @@ export default function ProjectDetail() {
       case "snapshot": return <SnapshotTab projectId={pid} />;
       case "report": return <ReportView projectId={pid} />;
       case "setup": return <ProjectSetupWizard projectId={pid} onComplete={() => { refreshBoq(); setView("boq"); }} />;
+      case "other": return <OtherItemsTab projectId={pid} />;
       case "settings": return <SettingsTab projectId={pid} />;
     }
   };

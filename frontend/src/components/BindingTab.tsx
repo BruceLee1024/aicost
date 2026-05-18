@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Button, Drawer, Modal, Popconfirm, Space, Spin, Table, Tag, message,
 } from "antd";
+import { BizTable } from "./BizTable";
 import { LinkOutlined, RobotOutlined, ThunderboltOutlined } from "@ant-design/icons";
 import type { Binding, BoqItem, CalcProvenance, MatchCandidate } from "../api";
 import { api } from "../api";
@@ -217,10 +218,11 @@ export default function BindingTab({ projectId }: Props) {
         </div>
       </div>
 
-      <Table
+      <BizTable
+        showIndex
         rowKey="id" columns={columns} dataSource={rows}
-        loading={loading} size="small"
-        pagination={{ pageSize: 20, showSizeChanger: true, showTotal: (t) => `共 ${t} 条` }}
+        loading={loading}
+        pagination={{ pageSize: 20 }}
         rowClassName={(r) => r.bound ? "" : "ant-table-row-warning"}
       />
 

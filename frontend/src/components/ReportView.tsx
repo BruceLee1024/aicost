@@ -11,13 +11,14 @@ import {
   Space,
   Spin,
   Statistic,
-  Table,
   Tag,
   Tooltip,
 } from "antd";
+import { BizTable } from "./BizTable";
 import {
   FileExcelOutlined,
   FilePdfOutlined,
+  FileWordOutlined,
   ReloadOutlined,
   PieChartOutlined,
   SearchOutlined,
@@ -61,14 +62,19 @@ export default function ReportView({ projectId }: Props) {
 
   const handleFilter = () => load(filterDivision, searchText);
 
-  const handleExport = async (format: "pdf" | "excel") => {
+  const handleExport = async (
+    format: "pdf" | "excel" | "docx",
+    opts?: { narrative?: boolean },
+  ) => {
     setExporting(true);
     try {
-      const blob = await api.exportReport(projectId, format);
+      const blob = await api.exportReport(projectId, format, opts);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `report_${projectId}.${format === "excel" ? "xlsx" : "pdf"}`;
+      const ext =
+        format === "excel" ? "xlsx" : format === "docx" ? "docx" : "pdf";
+      a.download = `report_${projectId}.${ext}`;
       a.click();
       window.URL.revokeObjectURL(url);
       message.success(`${format.toUpperCase()} 导出成功`);
@@ -213,6 +219,22 @@ export default function ReportView({ projectId }: Props) {
             导出 Excel
           </Button>
           <Button
+            icon={<FileWordOutlined />}
+            loading={exporting}
+            onClick={() => handleExport("docx")}
+          >
+            导出 Word
+          </Button>
+          <Tooltip title="导出 Word 并附 AI 生成的执行摘要、分部分析、风险与建议（Sprint 9）">
+            <Button
+              icon={<FileWordOutlined />}
+              loading={exporting}
+              onClick={() => handleExport("docx", { narrative: true })}
+            >
+              Word + AI 摘要
+            </Button>
+          </Tooltip>
+          <Button
             type="primary"
             icon={<FilePdfOutlined />}
             loading={exporting}
@@ -282,11 +304,10 @@ export default function ReportView({ projectId }: Props) {
           </Space>
         }
       >
-        <Table
+        <BizTable
           dataSource={divisions}
           columns={divisionColumns}
           rowKey="division"
-          size="small"
           pagination={false}
         />
       </Card>
@@ -317,12 +338,12 @@ export default function ReportView({ projectId }: Props) {
           </Space>
         }
       >
-        <Table
+        <BizTable
+          showIndex
           dataSource={line_items}
           columns={lineColumns}
           rowKey="boq_item_id"
-          size="small"
-          pagination={{ pageSize: 20, showSizeChanger: true, showTotal: (t: number) => `共 ${t} 项` }}
+          pagination={{ pageSize: 20, showTotal: (t: number) => `共 ${t} 项` }}
           scroll={{ x: 800 }}
         />
       </Card>

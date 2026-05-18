@@ -14,6 +14,10 @@ from app.ai.tools import memory_tools      # noqa: F401
 from app.ai.tools import skill_tools       # noqa: F401
 from app.ai.tools import project_tools     # noqa: F401
 from app.ai.tools import report_tools      # noqa: F401
+from app.ai.tools import rag_tools         # noqa: F401
+from app.ai.tools import measure_tools     # noqa: F401
+from app.ai.tools import lmm_tools         # noqa: F401
+from app.ai.tools import compliance_tools  # noqa: F401
 
 
 def register_all_tools() -> None:

@@ -959,10 +959,10 @@ class TestGlobalRegistryIntegrity:
         from app.ai.agents.v2.orchestrator import OrchestratorAgent
 
         orch = OrchestratorAgent()
-        # 15 delegate + 9 lifecycle + 5 batch/bind + 2 reports + 5 memory + 4 skill = 36+
-        assert len(orch.tool_names) >= 36
+        # 17 delegate + 9 lifecycle + 5 batch/bind + 2 reports + 5 memory + 4 skill = 37+
+        assert len(orch.tool_names) >= 37
         delegate_tools = [t for t in orch.tool_names if t.startswith("delegate_")]
-        assert len(delegate_tools) == 15  # 9 original + 4 Phase G + 2 Phase I
+        assert len(delegate_tools) == 17  # 9 original + 4 Phase G + 2 Phase I + 2 Phase J (measures, lmm)
 
     def test_orchestrator_has_phase_g_agents(self):
         import app.ai.tools

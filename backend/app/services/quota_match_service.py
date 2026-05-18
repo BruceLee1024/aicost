@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from app.ai.agents.quota_match_agent import rerank_quota_candidates_with_agent
 
 from app.models.boq_item import BoqItem
+from app.models.enterprise_quota_item import STATUS_APPROVED, EnterpriseQuotaItem
 from app.models.quota_item import QuotaItem
 
 
@@ -28,6 +29,8 @@ class MatchCandidate:
     unit: str
     confidence: float  # 0.0 ~ 1.0
     reasons: list[str] = field(default_factory=list)
+    is_enterprise: bool = False
+    source_type: str = "public"  # "public" | "enterprise"
 
 
 # ── Synonym / keyword expansion tables ──────────────────────────────
@@ -175,52 +178,69 @@ def find_candidates(
         return []
 
     quotas = db.query(QuotaItem).all()
-    if not quotas:
+    enterprise_quotas = (
+        db.query(EnterpriseQuotaItem)
+        .filter(EnterpriseQuotaItem.status == STATUS_APPROVED)
+        .all()
+    )
+    if not quotas and not enterprise_quotas:
         return []
 
-    scored: list[tuple[float, QuotaItem, list[str]]] = []
+    # tuples: (score, id, code, name, unit, reasons, is_enterprise)
+    scored: list[tuple[float, int, str, str, str, list[str], bool]] = []
 
-    for q in quotas:
+    def _score_quota(
+        quota_id: int, quota_code: str, name: str, unit: str, *, is_ent: bool,
+    ) -> tuple[float, list[str]]:
         reasons: list[str] = []
         score = 0.0
-
         # --- Name similarity (weight 0.55) ---
-        name_sim = _name_similarity(boq.name, q.name)
+        name_sim = _name_similarity(boq.name, name)
         score += name_sim * 0.55
         if name_sim > 0.5:
             reasons.append(f"名称相似度 {name_sim:.0%}")
         elif name_sim > 0.3:
             reasons.append(f"名称部分匹配 {name_sim:.0%}")
-
         # --- Unit match (weight 0.30) ---
-        if _units_compatible(boq.unit, q.unit):
+        if _units_compatible(boq.unit, unit):
             score += 0.30
             reasons.append("单位一致")
         else:
             reasons.append("⚠ 单位不一致")
-
         # --- Code prefix overlap (weight 0.15) ---
-        code_sim = SequenceMatcher(None, boq.code, q.quota_code).ratio()
+        code_sim = SequenceMatcher(None, boq.code, quota_code).ratio()
         score += code_sim * 0.15
         if code_sim > 0.3:
             reasons.append(f"编码相似 {code_sim:.0%}")
+        # --- Enterprise priority boost (capped) ---
+        if is_ent:
+            score = min(score + 0.15, 1.2)
+            reasons.insert(0, "⭐ 企业定额（优先）")
+        return score, reasons
 
-        scored.append((score, q, reasons))
+    for q in enterprise_quotas:
+        s, r = _score_quota(q.id, q.quota_code, q.name, q.unit, is_ent=True)
+        scored.append((s, q.id, q.quota_code, q.name, q.unit, r, True))
+    for q in quotas:
+        s, r = _score_quota(q.id, q.quota_code, q.name, q.unit, is_ent=False)
+        scored.append((s, q.id, q.quota_code, q.name, q.unit, r, False))
 
     # Sort descending by score
     scored.sort(key=lambda x: x[0], reverse=True)
     # Recall more candidates, then optionally rerank via AI agent.
     recall_n = min(len(scored), max(top_n * 3, 15))
     recalled: list[dict] = []
-    for score, q, reasons in scored[:recall_n]:
+    for score, qid, qcode, qname, qunit, reasons, is_ent in scored[:recall_n]:
         recalled.append(
             {
-                "quota_item_id": q.id,
-                "quota_code": q.quota_code,
-                "quota_name": q.name,
-                "unit": q.unit,
+                "quota_item_id": qid,
+                "quota_code": qcode,
+                "quota_name": qname,
+                "unit": qunit,
                 "confidence": round(min(score, 1.0), 3),
                 "reasons": reasons,
+                "is_enterprise": is_ent,
+                "source_type": "enterprise" if is_ent else "public",
             }
         )
 
@@ -232,14 +252,27 @@ def find_candidates(
         top_n=top_n,
     )
 
-    return [
-        MatchCandidate(
-            quota_item_id=int(c["quota_item_id"]),
-            quota_code=str(c["quota_code"]),
-            quota_name=str(c["quota_name"]),
-            unit=str(c["unit"]),
-            confidence=float(c["confidence"]),
-            reasons=[str(r) for r in c.get("reasons", [])],
+    # Build a lookup for enterprise flags from the recalled list (the rerank
+    # agent is not guaranteed to preserve the new keys, so we re-attach).
+    flag_lookup: dict[tuple[int, str], dict[str, object]] = {
+        (int(c["quota_item_id"]), str(c["quota_code"])): c for c in recalled
+    }
+    enriched: list[MatchCandidate] = []
+    for c in reranked:
+        key = (int(c["quota_item_id"]), str(c["quota_code"]))
+        original = flag_lookup.get(key, {})
+        is_ent = bool(c.get("is_enterprise", original.get("is_enterprise", False)))
+        source_type = str(c.get("source_type", original.get("source_type", "public")))
+        enriched.append(
+            MatchCandidate(
+                quota_item_id=int(c["quota_item_id"]),
+                quota_code=str(c["quota_code"]),
+                quota_name=str(c["quota_name"]),
+                unit=str(c["unit"]),
+                confidence=float(c["confidence"]),
+                reasons=[str(r) for r in c.get("reasons", [])],
+                is_enterprise=is_ent,
+                source_type=source_type,
+            ),
         )
-        for c in reranked
-    ]
+    return enriched

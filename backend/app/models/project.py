@@ -26,6 +26,13 @@ class Project(Base):
     standard_type: Mapped[str] = mapped_column(String(50), nullable=False, default="GB50500")  # GB50500 | HKSMM4
     language: Mapped[str] = mapped_column(String(20), nullable=False, default="zh")  # zh | en | bilingual
     currency: Mapped[str] = mapped_column(String(10), nullable=False, default="CNY")  # CNY | HKD
+    # ── M1 双轨重构：精确指向计价标准版本 (e.g. GBT50500-2024 / GB50500-2013) ──
+    pricing_standard_id: Mapped[int | None] = mapped_column(
+        ForeignKey("pricing_standards.id"), nullable=True, default=None,
+    )
+    profession: Mapped[str] = mapped_column(String(50), nullable=False, default="房建")
+    tax_method: Mapped[str] = mapped_column(String(20), nullable=False, default="general")  # "general" | "simple"
+    labor_index_period: Mapped[str] = mapped_column(String(20), nullable=False, default="")
     # ── Timestamps ──
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())

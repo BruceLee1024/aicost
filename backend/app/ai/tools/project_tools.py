@@ -8,6 +8,7 @@ drive the entire workflow from project creation to cost calculation.
 from __future__ import annotations
 
 import json
+from typing import Any
 
 from app.ai.framework.context import AgentContext
 from app.ai.framework.tool_def import tool
@@ -462,12 +463,113 @@ def delete_boq_items(
 
 
 # ────────────────────────────────────────────────
+# Sprint 9 — Phase 2: Draft (propose) instead of direct write
+# ────────────────────────────────────────────────
+
+
+@tool(
+    name="propose_boq_items",
+    description=(
+        "提议清单草稿（不写入数据库）。用法与 batch_create_boq_items 相同，"
+        "但仅生成草稿供用户预览/编辑/确认。前端会把草稿渲染成可编辑表格，"
+        "用户确认后再调用 batch_create_boq_items 写入。"
+        "参数 items 是 JSON 数组，每项含: code, name, unit, quantity, division, characteristics。"
+        "返回草稿 token、项数、按分部统计。**用户已要求草稿确认流程时优先用本工具**。"
+    ),
+    read_only=True,  # cacheable — same items → same draft
+)
+def propose_boq_items(
+    ctx: AgentContext,
+    *,
+    items: str,
+) -> str:
+    """Generate an editable BOQ draft. Stored on ctx.metadata for retrieval."""
+    MAX_ITEMS = 200
+
+    try:
+        item_list = json.loads(items) if isinstance(items, str) else items
+    except (json.JSONDecodeError, TypeError) as e:
+        return json.dumps({"error": f"items 参数 JSON 解析失败: {e}"}, ensure_ascii=False)
+
+    if not isinstance(item_list, list) or len(item_list) == 0:
+        return json.dumps({"error": "items 必须是非空数组"}, ensure_ascii=False)
+
+    if len(item_list) > MAX_ITEMS:
+        return json.dumps(
+            {"error": f"单次最多草拟 {MAX_ITEMS} 项，当前 {len(item_list)} 项，请分批"},
+            ensure_ascii=False,
+        )
+
+    # Normalize each item (no DB writes)
+    cleaned: list[dict[str, Any]] = []
+    division_counter: dict[str, int] = {}
+    errors: list[str] = []
+
+    for i, raw in enumerate(item_list):
+        if not isinstance(raw, dict):
+            errors.append(f"第 {i} 项不是对象")
+            continue
+        name = (raw.get("name") or "").strip()
+        if not name:
+            errors.append(f"第 {i} 项缺少 name")
+            continue
+        code = (raw.get("code") or "").strip() or f"AUTO-{i + 1:04d}"
+        unit = (raw.get("unit") or "").strip() or "项"
+        try:
+            quantity = float(raw.get("quantity", 0) or 0)
+        except (TypeError, ValueError):
+            quantity = 0.0
+        division = (raw.get("division") or "").strip()
+        cleaned.append(
+            {
+                "draft_id": f"d{i + 1}",
+                "code": code,
+                "name": name,
+                "unit": unit,
+                "quantity": quantity,
+                "division": division,
+                "characteristics": (raw.get("characteristics") or "").strip(),
+                "remark": (raw.get("remark") or "").strip(),
+            }
+        )
+        division_counter[division or "未分类"] = (
+            division_counter.get(division or "未分类", 0) + 1
+        )
+
+    # Persist to ctx.metadata (per-run) AND the process-level draft store
+    # so a separate HTTP request from the BoqDraftEditor can retrieve it
+    # after the orchestrator thread terminates.
+    draft_token = f"draft_{ctx.project_id or 0}_{len(cleaned)}_{hash(json.dumps(cleaned, sort_keys=True)) & 0xFFFFFFFF:08x}"
+    ctx.metadata.setdefault("boq_drafts", {})[draft_token] = cleaned
+    from app.ai.framework.draft_store import get_draft_store
+    get_draft_store().put(draft_token, ctx.project_id or 0, cleaned)
+
+    return json.dumps(
+        {
+            "action": "drafted",
+            "draft_token": draft_token,
+            "draft_count": len(cleaned),
+            "division_summary": division_counter,
+            "errors": errors,
+            "preview": cleaned[:5],
+            "next_step": (
+                "请告诉用户草稿已就绪，前端将弹出编辑器。"
+                "用户编辑确认后会触发 batch_create_boq_items 写入。"
+                "你的最终回复应说明分部数量与总条数，**不要再调任何工具**。"
+            ),
+        },
+        ensure_ascii=False,
+    )
+
+
+# ────────────────────────────────────────────────
 # Register
 # ────────────────────────────────────────────────
 
 registry.register_many(
     create_project,
     batch_create_boq_items,
+    propose_boq_items,
     recognize_drawing_tool,
     batch_calculate_project,
     recalculate_dirty,

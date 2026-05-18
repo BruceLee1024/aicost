@@ -29,6 +29,7 @@ class ValuationAgentV2(BaseAgent):
     def tool_names(self) -> list[str]:
         return [
             "search_quotas",
+            "search_quotas_2024",
             "get_quota_detail",
             "bind_quota",
             "unbind_quota",
@@ -37,6 +38,11 @@ class ValuationAgentV2(BaseAgent):
             "get_material_prices",
             "search_standard_codes",
             "validate_binding",
+            "get_other_items_summary",
+            "add_other_item",
+            "get_regulatory_fees",
+            "parse_boq_code",
+            "calculate_five_fees",
         ]
 
     @property

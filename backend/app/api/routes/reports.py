@@ -213,15 +213,21 @@ def get_report(
 @router.get("/projects/{project_id}/report/export")
 def export_report(
     project_id: int,
-    format: str = Query("pdf", description="Export format: pdf or excel"),
+    format: str = Query("pdf", description="Export format: pdf | excel | docx"),
+    narrative: bool = Query(
+        False,
+        description="Sprint 9 Phase 4: include AI-generated executive narrative (docx only)",
+    ),
     db: Session = Depends(get_db),
 ):
-    """Export a valuation report as PDF or Excel."""
+    """Export a valuation report as PDF, Excel, or Word."""
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    if format == "excel":
+    fmt = (format or "pdf").lower()
+
+    if fmt == "excel":
         from app.services.export_service import export_valuation_report
         file_bytes = export_valuation_report(project_id=project_id, db=db)
         filename = f"valuation_report_{project.name}_{project_id}.xlsx"
@@ -230,7 +236,7 @@ def export_report(
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
-    elif format == "pdf":
+    if fmt == "pdf":
         from app.services.report_export_service import export_valuation_pdf
         file_bytes = export_valuation_pdf(project_id=project_id, db=db)
         filename = f"valuation_report_{project.name}_{project_id}.pdf"
@@ -239,5 +245,28 @@ def export_report(
             media_type="application/pdf",
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
-    else:
-        raise HTTPException(status_code=400, detail=f"Unsupported format: {format}")
+    if fmt in ("docx", "word"):
+        from app.services.report_docx_service import export_valuation_docx
+
+        narrative_text: str | None = None
+        if narrative:
+            try:
+                from app.services.report_narrative_service import generate_narrative
+
+                narrative_text = generate_narrative(project_id, db)
+            except Exception:  # pragma: no cover — defensive
+                narrative_text = None
+
+        file_bytes = export_valuation_docx(
+            project_id=project_id, db=db, narrative=narrative_text
+        )
+        filename = f"valuation_report_{project.name}_{project_id}.docx"
+        return StreamingResponse(
+            io.BytesIO(file_bytes),
+            media_type=(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            ),
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+
+    raise HTTPException(status_code=400, detail=f"Unsupported format: {format}")

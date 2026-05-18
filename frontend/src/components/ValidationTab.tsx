@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Button, Col, Row, Statistic, Table, Tag } from "antd";
+import { Button, Col, Row, Statistic, Tag } from "antd";
+import { BizTable } from "./BizTable";
 import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, WarningOutlined } from "@ant-design/icons";
 import type { ValidationIssue, ValidationReport } from "../api";
 import { api } from "../api";
@@ -75,10 +76,11 @@ export default function ValidationTab({ projectId }: Props) {
           <div style={{ marginTop: 8, color: "var(--text-secondary)", fontSize: 13 }}>所有校验规则均已通过，项目数据完整且合规</div>
         </div>
       ) : (
-        <Table
+        <BizTable<ValidationIssue>
+          showIndex
           rowKey={(r: ValidationIssue) => `${r.code}-${r.boq_item_id ?? "g"}-${r.message.slice(0, 20)}`} columns={columns}
           dataSource={report?.issues ?? []} loading={loading}
-          pagination={{ pageSize: 20, showTotal: (t) => `共 ${t} 条` }} size="small"
+          pagination={{ pageSize: 20 }}
         />
       )}
     </div>

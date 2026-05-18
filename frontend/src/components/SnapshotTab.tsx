@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import {
-  Button, Card, Input, Select, Space, Statistic, Table, Tag, message,
+  Button, Card, Input, Select, Space, Statistic, Tag, message,
 } from "antd";
+import { BizTable } from "./BizTable";
 import { CameraOutlined, DownloadOutlined, RobotOutlined, SwapOutlined } from "@ant-design/icons";
 import type { DiffReport, LineDiff, Snapshot } from "../api";
 import { api } from "../api";
@@ -87,7 +88,7 @@ export default function SnapshotTab({ projectId }: Props) {
         <Button type="primary" icon={<CameraOutlined />} onClick={handleCreate} size="large">创建快照</Button>
       </Space>
 
-      <Table rowKey="id" columns={snapColumns} dataSource={snapshots} pagination={false} size="small" />
+      <BizTable showIndex rowKey="id" columns={snapColumns} dataSource={snapshots} pagination={false} />
 
       {/* Diff comparison */}
       {snapshots.length >= 2 && (
@@ -124,9 +125,10 @@ export default function SnapshotTab({ projectId }: Props) {
                 </div>
               )}
 
-              <Table
+              <BizTable<LineDiff>
+                showIndex
                 rowKey={(r: LineDiff) => r.boq_code} columns={diffColumns}
-                dataSource={diff.lines} pagination={false} size="small"
+                dataSource={diff.lines} pagination={false}
               />
               <Button icon={<DownloadOutlined />} onClick={handleExportDiff} style={{ marginTop: 8 }}>
                 导出差异报告

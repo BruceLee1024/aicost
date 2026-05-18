@@ -59,6 +59,9 @@ class OrchestratorAgent(BaseAgent):
         # Phase I: Project setup & pipeline
         from app.ai.agents.v2.project_setup_agent import ProjectSetupAgent
         from app.ai.agents.v2.full_pipeline_agent import FullPipelineAgent
+        # Phase J: Business-specific agents
+        from app.ai.agents.v2.measures_agent import MeasuresAgent
+        from app.ai.agents.v2.lmm_agent import LMMAggregationAgent
 
         # Wrap each agent as a tool
         agent_tools = [
@@ -94,6 +97,11 @@ class OrchestratorAgent(BaseAgent):
                           description_override="委派给「智能开项Agent」：根据工程描述或图纸自动创建项目并生成完整工程量清单。适合新建项目、智能开项场景。"),
             agent_to_tool(FullPipelineAgent(), name_override="delegate_full_pipeline",
                           description_override="委派给「全流程Agent」：一键完成从新建项目到生成计价报告的全自动流水线（开项→BOQ→组价→计算→报告）。适合“一键全流程”场景。"),
+            # Phase J: Business-specific agents
+            agent_to_tool(MeasuresAgent(), name_override="delegate_measures",
+                          description_override="委派给「措施项目Agent」：配置/调整/查询措施项目（安全文明施工、脚手架、垂直运输、夜间施工、二次搬运等）。能一键返回 GB50500 标准套餐并批量写入。"),
+            agent_to_tool(LMMAggregationAgent(), name_override="delegate_lmm",
+                          description_override="委派给「人材机汇总Agent」：聚合项目人工/材料/机械资源消耗，按金额排序资源 Top-N、识别未挂信息价主材，生成人材机报告。"),
         ]
 
         for t in agent_tools:
