@@ -157,7 +157,7 @@ export default function LandingPage() {
           </p>
           <div className="landing-hero-actions">
             <button className="landing-btn landing-btn-primary landing-btn-lg" onClick={() => navigate("/dashboard")}>
-              开启 14 天免费试用
+              开始使用
             </button>
             <button className="landing-btn landing-btn-outline landing-btn-lg" onClick={() => navigate("/projects")}>
               浏览演示项目
@@ -252,7 +252,7 @@ export default function LandingPage() {
           <p>加入超过 500 家领先建筑单位，利用 AI 技术全面提升您的核心竞争力。</p>
           <div className="landing-hero-actions">
             <button className="landing-btn landing-btn-primary landing-btn-lg" onClick={() => navigate("/dashboard")}>
-              开启 14 天免费试用
+              开始使用
             </button>
             <button className="landing-btn landing-btn-outline landing-btn-lg">联系技术专家</button>
           </div>
